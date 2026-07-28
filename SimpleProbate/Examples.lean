@@ -94,16 +94,16 @@ def base2026Case : TransferCase := {
 }
 
 example : PersonalPropertyAffidavitEligible base2026Case := by decide
-example : !routeEligible { base2026Case with daysSinceDeath := 39 }
-    .personalPropertyAffidavit := by decide
+example : routeEligible { base2026Case with daysSinceDeath := 39 }
+    .personalPropertyAffidavit = .ok false := by decide
 example : routeEligible { base2026Case with
     authority := .writtenPersonalRepresentativeConsent }
-    .personalPropertyAffidavit := by decide
-example : !routeEligible { base2026Case with
+    .personalPropertyAffidavit = .ok true := by decide
+example : routeEligible { base2026Case with
     estate := { assets := [
       { personalTarget with grossValue := Money.dollars 208_850 + 1 }
     ] } }
-    .personalPropertyAffidavit := by decide
+    .personalPropertyAffidavit = .ok false := by decide
 
 def smallRealTarget : Asset := {
   name := "small parcel"
@@ -116,13 +116,13 @@ example : routeEligible { base2026Case with
     estate := { assets := [smallRealTarget] }
     target := smallRealTarget
     sixMonthsElapsed := true }
-    .smallValueRealPropertyAffidavit := by decide
+    .smallValueRealPropertyAffidavit = .ok true := by decide
 
-example : !routeEligible { base2026Case with
+example : routeEligible { base2026Case with
     estate := { assets := [smallRealTarget] }
     target := smallRealTarget
     sixMonthsElapsed := false }
-    .smallValueRealPropertyAffidavit := by decide
+    .smallValueRealPropertyAffidavit = .ok false := by decide
 
 def primaryResidenceTarget : Asset := {
   name := "primary residence"
@@ -136,15 +136,15 @@ def primaryResidenceTarget : Asset := {
 example : routeEligible { base2026Case with
     estate := { assets := [primaryResidenceTarget] }
     target := primaryResidenceTarget }
-    .primaryResidencePetition := by decide
+    .primaryResidencePetition = .ok true := by decide
 
-example : !routeEligible { base2026Case with
+example : routeEligible { base2026Case with
     estate := { assets := [
       { primaryResidenceTarget with grossValue := Money.dollars 750_000 + 1 }
     ] }
     target := { primaryResidenceTarget with
       grossValue := Money.dollars 750_000 + 1 } }
-    .primaryResidencePetition := by decide
+    .primaryResidencePetition = .ok false := by decide
 
 example : routeEligible { base2026Case with
     estate := { assets := [] }
@@ -153,7 +153,7 @@ example : routeEligible { base2026Case with
     noSuperiorRight := false
     survivorStatus := .spouse
     propertyPassesToSurvivor := true }
-    .spousalPropertyPetition := by decide
+    .spousalPropertyPetition = .ok true := by decide
 
 example :
     candidateRoutes { base2026Case with
@@ -161,6 +161,55 @@ example :
       daysSinceDeath := 0
       claimantIsSuccessor := false
       noSuperiorRight := false } =
-      [.formalProbateOrOtherProcedure] := by decide
+      .ok [.formalProbateOrOtherProcedure] := by decide
+
+def directTransferTarget : Asset := {
+  personalTarget with
+  treatment := .directBeneficiary
+}
+
+def postSnapshotDirectCase : TransferCase := {
+  base2026Case with
+  deathDate := ⟨2027, 1, 1⟩
+  estate := { assets := [directTransferTarget] }
+  target := directTransferTarget
+}
+
+example :
+    routeEligible postSnapshotDirectCase (.directTransfer .namedBeneficiary) =
+      .error .afterSnapshot := by decide
+
+example :
+    candidateRoutes postSnapshotDirectCase = .error .afterSnapshot := by decide
+
+def postSnapshotSpousalCase : TransferCase := {
+  base2026Case with
+  deathDate := ⟨2027, 1, 1⟩
+  estate := { assets := [] }
+  targetIsPartOfEstate := false
+  claimantIsSuccessor := false
+  noSuperiorRight := false
+  survivorStatus := .spouse
+  propertyPassesToSurvivor := true
+}
+
+example :
+    routeEligible postSnapshotSpousalCase .spousalPropertyPetition =
+      .error .afterSnapshot := by decide
+
+example :
+    candidateRoutes postSnapshotSpousalCase = .error .afterSnapshot := by decide
+
+def invalidDateCase : TransferCase := {
+  base2026Case with
+  deathDate := ⟨2026, 2, 29⟩
+}
+
+example :
+    routeEligible invalidDateCase .personalPropertyAffidavit =
+      .error .invalidDate := by decide
+
+example :
+    candidateRoutes invalidDateCase = .error .invalidDate := by decide
 
 end SimpleProbate.Examples

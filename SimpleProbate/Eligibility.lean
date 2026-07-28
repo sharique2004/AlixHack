@@ -186,20 +186,31 @@ instance (case : TransferCase) (route : Route) :
     simp only [RouteEligible] <;>
     infer_instance
 
-def candidateRoutes (case : TransferCase) : List Route :=
+private def candidateRoutesUnchecked (case : TransferCase) : List Route :=
   if nonFallbackRoutes case = [] then
     [.formalProbateOrOtherProcedure]
   else
     nonFallbackRoutes case
 
-def routeEligible (case : TransferCase) (route : Route) : Bool :=
+def candidateRoutes (case : TransferCase) : Except DateError (List Route) :=
+  match classifyDeathDate case.deathDate with
+  | .ok _ => .ok (candidateRoutesUnchecked case)
+  | .error error => .error error
+
+private def routeEligibleUnchecked (case : TransferCase) (route : Route) : Bool :=
   decide (RouteEligible case route)
 
-theorem candidateRoutes_sound
+def routeEligible
+    (case : TransferCase) (route : Route) : Except DateError Bool :=
+  match classifyDeathDate case.deathDate with
+  | .ok _ => .ok (routeEligibleUnchecked case route)
+  | .error error => .error error
+
+private theorem candidateRoutesUnchecked_sound
     {case : TransferCase} {route : Route}
-    (membership : route ∈ candidateRoutes case) :
+    (membership : route ∈ candidateRoutesUnchecked case) :
     RouteEligible case route := by
-  unfold candidateRoutes at membership
+  unfold candidateRoutesUnchecked at membership
   split at membership
   next noRoutes =>
     have routeIsFallback : route = .formalProbateOrOtherProcedure := by
@@ -213,5 +224,21 @@ theorem candidateRoutes_sound
     cases route <;>
       simp_all only [routeEligibleNonFallback, RouteEligible,
         decide_eq_true_eq, Bool.false_eq_true]
+
+theorem candidateRoutes_sound
+    {case : TransferCase} {routes : List Route} {route : Route}
+    (result : candidateRoutes case = .ok routes)
+    (membership : route ∈ routes) :
+    RouteEligible case route := by
+  unfold candidateRoutes at result
+  cases dateResult : classifyDeathDate case.deathDate with
+  | error _ =>
+      rw [dateResult] at result
+      contradiction
+  | ok _ =>
+      rw [dateResult] at result
+      injection result with routesEq
+      subst routes
+      exact candidateRoutesUnchecked_sound membership
 
 end SimpleProbate
