@@ -1,4 +1,5 @@
 import SimpleProbate.Date
 import SimpleProbate.Thresholds
 import SimpleProbate.Estate
+import SimpleProbate.Eligibility
 import SimpleProbate.Examples

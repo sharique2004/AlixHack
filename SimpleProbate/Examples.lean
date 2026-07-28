@@ -1,6 +1,7 @@
 import SimpleProbate.Date
 import SimpleProbate.Thresholds
 import SimpleProbate.Estate
+import SimpleProbate.Eligibility
 
 namespace SimpleProbate.Examples
 
@@ -72,5 +73,94 @@ example :
       encumbrances := Money.dollars 60_000
       treatment := .counted
     }] } : Estate).smallValueRealPropertyValue = Money.dollars 69_625 := by decide
+
+def personalTarget : Asset :=
+  countedPersonal "account" (Money.dollars 208_850) 0
+
+def base2026Case : TransferCase := {
+  deathDate := ⟨2026, 1, 1⟩
+  estate := { assets := [personalTarget] }
+  target := personalTarget
+  targetIsPartOfEstate := true
+  authority := .noProceeding
+  daysSinceDeath := 40
+  sixMonthsElapsed := false
+  claimantIsSuccessor := true
+  noSuperiorRight := true
+  funeralLastIllnessAndUnsecuredDebtsPaid := true
+  survivorStatus := .none
+  propertyPassesToSurvivor := false
+  propertyBelongsToSurvivor := false
+}
+
+example : PersonalPropertyAffidavitEligible base2026Case := by decide
+example : !routeEligible { base2026Case with daysSinceDeath := 39 }
+    .personalPropertyAffidavit := by decide
+example : routeEligible { base2026Case with
+    authority := .writtenPersonalRepresentativeConsent }
+    .personalPropertyAffidavit := by decide
+example : !routeEligible { base2026Case with
+    estate := { assets := [
+      { personalTarget with grossValue := Money.dollars 208_850 + 1 }
+    ] } }
+    .personalPropertyAffidavit := by decide
+
+def smallRealTarget : Asset := {
+  name := "small parcel"
+  kind := .californiaReal
+  grossValue := Money.dollars 69_625
+  treatment := .counted
+}
+
+example : routeEligible { base2026Case with
+    estate := { assets := [smallRealTarget] }
+    target := smallRealTarget
+    sixMonthsElapsed := true }
+    .smallValueRealPropertyAffidavit := by decide
+
+example : !routeEligible { base2026Case with
+    estate := { assets := [smallRealTarget] }
+    target := smallRealTarget
+    sixMonthsElapsed := false }
+    .smallValueRealPropertyAffidavit := by decide
+
+def primaryResidenceTarget : Asset := {
+  name := "primary residence"
+  kind := .californiaReal
+  grossValue := Money.dollars 750_000
+  treatment := .counted
+  includedInPrimaryResidencePetition := true
+  isPrimaryResidence := true
+}
+
+example : routeEligible { base2026Case with
+    estate := { assets := [primaryResidenceTarget] }
+    target := primaryResidenceTarget }
+    .primaryResidencePetition := by decide
+
+example : !routeEligible { base2026Case with
+    estate := { assets := [
+      { primaryResidenceTarget with grossValue := Money.dollars 750_000 + 1 }
+    ] }
+    target := { primaryResidenceTarget with
+      grossValue := Money.dollars 750_000 + 1 } }
+    .primaryResidencePetition := by decide
+
+example : routeEligible { base2026Case with
+    estate := { assets := [] }
+    targetIsPartOfEstate := false
+    claimantIsSuccessor := false
+    noSuperiorRight := false
+    survivorStatus := .spouse
+    propertyPassesToSurvivor := true }
+    .spousalPropertyPetition := by decide
+
+example :
+    candidateRoutes { base2026Case with
+      authority := .blockedByProceeding
+      daysSinceDeath := 0
+      claimantIsSuccessor := false
+      noSuperiorRight := false } =
+      [.formalProbateOrOtherProcedure] := by decide
 
 end SimpleProbate.Examples
