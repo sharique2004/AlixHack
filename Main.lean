@@ -1,4 +1,4 @@
 import SimpleProbate
 
 def main : IO Unit :=
-  IO.println s!"Hello, {hello}!"
+  IO.println "Simple probate formalization"
