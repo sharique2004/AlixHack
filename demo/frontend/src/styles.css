@@ -658,6 +658,168 @@ body {
 
 .compare-chip { align-self: flex-start; margin-top: 2px; }
 
+/* ---------- Slides (PPT overlay) ---------- */
+
+.slides {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.slides-close {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 2;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--ink-2);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+.slides-close:hover { background: var(--line-soft); }
+.slides-close:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.slide {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px 24px;
+  cursor: pointer;
+  overflow-y: auto;
+}
+
+.slide-body {
+  max-width: 780px;
+  text-align: center;
+}
+
+.slide-kicker {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.slide-body h2 {
+  margin: 20px 0 14px;
+  font-size: clamp(2.1rem, 4.6vw, 3.35rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.slide-lead {
+  margin: 0 auto 6px;
+  max-width: 56ch;
+  font-size: 1.02rem;
+  color: var(--ink-2);
+}
+
+.slide-points {
+  list-style: none;
+  margin: 18px auto 0;
+  padding: 0;
+  max-width: 620px;
+  text-align: left;
+}
+
+.slide-points li {
+  font-size: 1.02rem;
+  color: var(--ink-2);
+  padding: 12px 2px;
+  border-top: 1px solid var(--line-soft);
+}
+.slide-points li:first-child { border-top: none; }
+.slide-points strong { color: var(--ink); font-weight: 600; }
+
+.slide-pipe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px auto 4px;
+}
+
+.pipe-node {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 13px;
+  box-shadow: var(--shadow-soft);
+  white-space: nowrap;
+}
+
+.pipe-node-hot { color: var(--amber); background: var(--amber-tint); border-color: var(--line); }
+.pipe-node-good { color: var(--blue-ink); background: var(--blue-tint-1); border-color: var(--line); }
+.pipe-arrow { color: var(--ink-3); font-size: 0.92rem; }
+
+.slide-foot {
+  margin: 18px auto 0;
+  max-width: 68ch;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+
+.slide-close-line {
+  margin: 22px 0 16px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.slide-cta { font-size: 1.02rem; }
+
+.slides-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 0 22px;
+}
+
+.slides-nav button {
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--ink-2);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+}
+.slides-nav button:disabled { opacity: 0.35; cursor: default; }
+.slides-nav button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.slide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.dot-active { background: var(--ink); }
+
 /* ---------- Footer ---------- */
 
 .page-foot { margin-top: 44px; text-align: center; }

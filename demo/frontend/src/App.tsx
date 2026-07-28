@@ -5,6 +5,7 @@ import {
   fmtCost,
   type EngineState,
 } from "./components/EngineCard";
+import { Slides } from "./components/Slides";
 
 interface ModelInfo {
   id: string;
@@ -204,6 +205,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editorText, setEditorText] = useState("");
   const [dialMax, setDialMax] = useState(30_000_000);
+  const [slidesOpen, setSlidesOpen] = useState(false);
   const leanSeq = useRef(0);
   const llmSeq = useRef(0);
   const dialTimer = useRef<number | null>(null);
@@ -371,7 +373,11 @@ export default function App() {
         >
           {drawerOpen ? "Close JSON" : "Edit JSON"}
         </button>
+        <button type="button" className="btn-dark" onClick={() => setSlidesOpen(true)}>
+          PPT
+        </button>
       </section>
+      {slidesOpen && <Slides onClose={() => setSlidesOpen(false)} />}
       {activeSample && <p className="case-blurb">{activeSample.blurb}</p>}
 
       {drawerOpen && (
