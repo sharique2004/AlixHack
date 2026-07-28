@@ -1,2 +1,9 @@
 /.lake
 /.worktrees/
+
+# demo app
+demo/backend/.env
+demo/backend/.venv/
+demo/frontend/node_modules/
+demo/frontend/dist/
+__pycache__/

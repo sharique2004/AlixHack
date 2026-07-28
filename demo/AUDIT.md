@@ -1,0 +1,362 @@
+# Ground-Truth Audit — Gemini vs Lean on the 12 Sample Cases
+
+*2026-07-28. Method: 12 independent audit agents, one per case. Each derived the legally correct
+answer from the court self-help page and Probate Code (NOT from either engine), then graded the
+deterministic Lean engine's result and three independent Gemini 2.5 Flash runs on identical input.
+Raw engine outputs: `audit_runs.json` (scratchpad).*
+
+## Scoreboard
+
+| # | Case | Ground truth | Lean | Gemini (3 runs) |
+|---|---|---|---|---|
+| 1 | eligible-personal-affidavit | ELIGIBLE | ✓ correct | 3/3 correct |
+| 2 | eligible-direct-transfer | ELIGIBLE | ✓ correct | 3/3 correct |
+| 3 | eligible-multiple-routes | ELIGIBLE | ✓ correct | 2/3 correct |
+| 4 | needs-info-unknown-value | INCOMPLETE_INFO | ✓ correct | 3/3 correct |
+| 5 | needs-info-unknown-death-date | INCOMPLETE_INFO | ✓ correct | 0/3 correct |
+| 6 | needs-info-inventory-not-confirmed | INCOMPLETE_INFO | ✓ correct | 0/3 correct |
+| 7 | over-cap-despite-unknowns | OTHER_FORM_REQUIRED | ✓ correct | 1/3 correct |
+| 8 | too-soon-20-days | OTHER_FORM_REQUIRED | ✓ correct | 3/3 correct |
+| 9 | eligible-primary-residence | ELIGIBLE | ✓ correct | 3/3 correct |
+| 10 | eligible-small-value-real-property | ELIGIBLE | ✓ correct | 2/3 correct |
+| 11 | pre-2022-death-over-old-cap | OTHER_FORM_REQUIRED | ✓ correct | 2/3 correct |
+| 12 | error-after-snapshot | ERROR | ✓ correct | 1/3 correct |
+
+**Lean: 12/12 correct at both verdict and route-table level.** No auditor found a legal error in the
+Lean engine (several confirmed subtle points, e.g. §13050's joint-tenancy exclusion zeroing the
+DE-305 valuation, that Gemini got wrong).
+
+**Gemini: 23/36 runs correct at verdict level**, with route-level errors in 10 of 12 cases even when
+the top verdict was right. Errors were SYSTEMATIC (0/3 on both unknown-death-date and
+inventory-not-confirmed; 1/3 on over-cap-despite-unknowns), not just sampling noise.
+
+## Why the LLM gets these wrong — five root causes
+
+1. **Open-world leakage.** The case JSON is a closed fact model (a `treatment` of `"counted"`
+   *answers* whether the asset passes outside probate), but the model reasons about how bank
+   accounts work in the real world — inventing missing facts that aren't schema fields
+   ("beneficiary_status", "ownership_type") and downgrading known answers to "needs information".
+2. **Unknown treated as favorable.** On the partial-information cases the model fills epistemic
+   gaps optimistically: unknown death date → assumes the waiting period and threshold band work
+   out; unconfirmed inventory → assumes the listed assets are all there is. The precedence rule
+   (a known violation beats unknowns; unknowns beat satisfaction) exists in its prompt but loses
+   to the helpfulness prior. This is the demo's central point: **unknown is never false — and an
+   LLM keeps treating it as whatever makes the answer resolvable.**
+3. **No concept of a source snapshot.** The formal model refuses death dates after 2026-12-31
+   (its sources end there). Gemini mostly answers anyway — it has no notion that its legal
+   knowledge has a boundary, so it extrapolates 2026 thresholds into 2027.
+4. **Numeric fragility on cents.** Large integer-cent values get mangled in reasoning
+   (5,000,000 cents narrated as $500 or $800), aggregation across assets is skipped before
+   threshold checks, and §13050 exclusions are ignored in valuations — LLM token-level arithmetic,
+   not a calculator.
+5. **Format fragility & sampling variance.** 3 of 36 runs produced unparseable JSON; route rows
+   flip status between identical runs; `forms`/`reasons` arrays are populated inconsistently.
+   The top verdict is stable only when it is overdetermined.
+
+---
+
+## Per-case detail
+
+### 1. `eligible-personal-affidavit`
+
+**Headline:** Both engines reach the correct ELIGIBLE verdict on all runs; Lean's six-route table is exactly right, while Gemini run 1 wrongly downgrades direct_transfer to needs_information by hallucinating unknown beneficiary/ownership facts for an asset whose 'counted' treatment already conclusively answers the question.
+
+**Ground truth — ELIGIBLE.** All four eligibility conditions of the court self-help page Part 2 (simple-transfer.md lines 108-117) are satisfied: the target is personal property, the qualifying estate value is $80,000 (5,000,000 + 3,000,000 cents), well under the $208,850 limit for deaths on or after 2025-04-01 (lines 55, 112), no probate proceeding is pending, and 444 days >= 40 days since death; the successor, superior-right, and inventory-complete conjuncts are also known true. Every other simplified route is conclusively disqualified on known facts: the target is not California real property (kills DE-305 and DE-310 routes), survivor_status is none (kills DE-221), and treatment 'counted' provides no direct-transfer basis. So the §13100 personal-property affidavit qualifies and the verdict is ELIGIBLE with overall simplified_routes_available.
+
+> *Framework caveat:* Only the formal-probate row depends on framework semantics: legally a DE-111 formal probate always remains available even when a simplified route qualifies — the framework's 'does_not_qualify' on that row means 'not recommended as fallback', not legal unavailability. The substantive verdict does not depend on the framework.
+
+**Lean (ELIGIBLE) — correct.** Verdict and all six route rows match the hand-derived ground truth. Cent handling is exact (detail: 'Qualifying personal-property value $80,000.00 <= $208,850.00 limit', correct band for death 2025-05-10), disqualification reasons cite the right conjuncts (no direct-transfer basis, target not CA real property, no surviving spouse), and the §13100 route correctly lists no DE form since the affidavit is presented to the asset holder, not filed with the court.
+
+**Gemini runs:** ELIGIBLE, ELIGIBLE, ELIGIBLE — 3/3 correct.
+
+Route-level errors (even where the verdict was right):
+- Run 1: direct_transfer marked needs_information instead of does_not_qualify, with invented missing facts 'estate.assets[0].beneficiary_status' and 'estate.assets[0].ownership_type' that are not fields in the input schema — treatment 'counted' is a known fact that conclusively rules out any direct-transfer basis, and per rules.md §3 a known violation must beat unknowns (there is no unknown here at all).
+- Runs 2 and 3: formal_probate_or_other_procedure row omits 'DE-111' from the forms array (Lean lists it); run 2 also leaves the reasons array empty and puts the rationale only in detail. Cosmetic, status is correct.
+
+Failure modes:
+- **known_enum_treated_as_unknown** — “Could qualify if the Chase checking account has a named beneficiary”  
+  The closed 'treatment' enum ('counted') is the authoritative, known answer to whether the asset passes outside probate, but the model's helpfulness prior pushes it to enumerate real-world possibilities (beneficiary designations, joint ownership) the schema has already ruled on, so it hallucinates schema fields that do not exist and converts a known violation into needs_information. It is pattern-matching on how bank accounts work in the world rather than doing closed-world evaluation of the supplied fact model — the mirror image of the unknown-treated-as-known failure: here a known fact is treated as unknown.
+- **sampling_variance_route_status** — “The 'direct_transfer' route may also be applicable, but more information about the specific nature of the bank account ... is needed”  
+  Only run 1 of 3 produces the needs_information flip; runs 2 and 3 correctly output does_not_qualify on the byte-identical input. Temperature sampling makes route-level determinations non-deterministic: the top verdict is stable because it is overdetermined (the affidavit route dominates), but marginal route rows sit near a decision boundary in the model's distribution, so per-route status is a coin flip across samples — exactly the reliability gap a deterministic engine does not have.
+- **output_format_fragility** — “A simplified route (personal property affidavit) qualifies, so formal probate is not required.”  
+  Runs 2 and 3 drop 'DE-111' from the formal-probate forms array and run 2 leaves its reasons array empty, moving the justification into the free-text detail field. JSON-schema adherence competes with content placement: the model reliably fills required top-level structure but treats semantically parallel sub-arrays (forms, reasons) as optional decoration whose population varies run to run, unlike the Lean engine's fixed serialization.
+
+
+### 2. `eligible-direct-transfer`
+
+**Headline:** Both engines reach the correct ELIGIBLE verdict with identical six-route statuses; Lean is flawless, while all three Gemini runs justify the DE-305 rejection with a fabricated over-cap comparison ($450,000 vs $69,625) that ignores the §13050 joint-tenancy exclusion and omit the actual disqualifying conjuncts.
+
+**Ground truth — ELIGIBLE.** The target Oakland condo is held in joint tenancy, and the court self-help page (simple-transfer.md, 'Property with survivorship rights') states the surviving joint owner automatically receives the property outside probate — no waiting period or value cap applies, so direct_transfer qualifies and the verdict is ELIGIBLE. Every other simplified route is conclusively disqualified on known facts: the §13100 affidavit requires personal property and 40 days (target is real, 25 days elapsed); DE-305 (§13200) requires a counted CA-real target, six months, and debts paid (all violated — and note the counted-real total is $0 because §13050 excludes joint-tenancy property, so the $69,625 cap is actually satisfied, not the disqualifier); DE-310 requires a counted primary residence plus 40 days; DE-221 requires a surviving spouse/partner (survivor_status is known 'none'); formal probate is does_not_qualify because a simplified route is available.
+
+> *Framework caveat:* The verdict does not depend on the framework. Two demo simplifications worth noting: in practice the joint-tenancy transfer is completed by recording an Affidavit of Death of Joint Tenant with a certified death certificate, so the direct_transfer row's 'no forms' detail is a simplification (that affidavit is not a probate form); and the framework marks formal probate 'does_not_qualify' to mean unnecessary, whereas in real law full probate is always available, just not needed.
+
+**Lean (ELIGIBLE) — correct.** Lean matches the hand-derived ground truth exactly: verdict ELIGIBLE via direct_transfer (detail correctly names basis joint_tenancy), and every route row carries the correct status with complete and correct disqualifying conjuncts (e.g. DE-305 rejected on target_not_counted + six_month_period_not_met + debts_not_paid, correctly NOT on the value cap, since the joint-tenancy condo contributes $0 to the §13200 counted-real valuation per §13050's joint-tenancy exclusion; Eligibility.lean lines 90-105 and Estate.lean lines 87-89 confirm).
+
+**Gemini runs:** ELIGIBLE, ELIGIBLE, ELIGIBLE — 3/3 correct.
+
+Route-level errors (even where the verdict was right):
+- Run 1: DE-305 row disqualified solely on 'gross value ($450,000) exceeds $69,625' — legally wrong reason; §13050 excludes joint-tenancy property from the qualifying valuation, so the counted-CA-real total is $0 and the cap is satisfied; the real disqualifiers (target treatment not counted, six months not elapsed, debts unpaid) are all omitted.
+- Run 2: same fabricated over-cap reason on DE-305; omits target-not-counted, six-month wait, and debts-unpaid conjuncts (its free-text even re-uses the excluded $450,000 against the $750,000 DE-310 cap, compounding the exclusion error).
+- Run 3: DE-305 row pairs one correct reason (debts unpaid) with the same wrong over-cap reason and still omits target-not-counted and the six-month wait.
+- All runs: primary_residence_petition and personal_property_affidavit rows are right in status but under-enumerate conjuncts vs Lean (e.g. no run flags that the joint-tenancy treatment itself disqualifies the target from the counted-real routes) — benign for the status, but the explanations are a sample of plausible reasons, not an evaluation trace.
+
+Failure modes:
+- **s13050_exclusion_ignored_in_valuation** — “"exceeds the maximum allowed ($69,625)"”  
+  The statutory check is two-stage: filter assets by §13050 treatment (joint tenancy contributes $0), then compare the sum to the cap. The model instead performs the single most salient surface operation — big asset number vs threshold number — because eligibility-check patterns in training data overwhelmingly look like 'value > limit ⇒ fail'. The extra conditional layer (this asset is excluded from that very valuation) loses to the high-availability arithmetic comparison. Identical in all three samples at non-zero temperature, so it is a systematic prior, not sampling variance; it only stayed harmless because independent conjuncts (treatment, timing, debts) also disqualified the route.
+- **disqualifier_enumeration_truncation** — “"funeral/debt payments are outstanding" (run 3 — the only true DE-305 conjunct any run cites)”  
+  Once the model has committed status: does_not_qualify and emitted one plausible reason object, JSON-schema adherence makes closing the reasons array the lowest-loss continuation — nothing in the decoding objective rewards exhaustively evaluating remaining conjuncts the way Lean's decidability instance must. Result: the true first-violated conjunct (target treatment not counted) appears in zero of three runs, and the six-month wait in zero of three, so the reasons field is post-hoc justification rather than a faithful trace; a user reading it would wrongly conclude DE-305 fails only on value and could become usable later.
+
+
+### 3. `eligible-multiple-routes`
+
+**Headline:** Lean is exactly right on the verdict and all six routes; Gemini reaches ELIGIBLE in runs 1–2 only with route-level errors (a phantom missing fact on direct_transfer, a treatment-token conflation that wrongly kills the DE-221 spousal route), and run 3 is lost entirely to malformed JSON while also misconverting 6,500,000 cents to $650.
+
+**Ground truth — ELIGIBLE.** Death 2025-08-20 falls in the on/after-2025-04-01 band, so the §13100 personal-property limit is $208,850 (simple-transfer.md threshold table). The $400,000 brokerage account passes to the surviving spouse and is excluded from valuation under §13050 ('community... property that passes to the surviving spouse'), leaving a qualifying value of $65,000 (6,500,000 cents) — under the cap, with 342 ≥ 40 days elapsed, no probate proceeding, successor with no superior right, and a complete inventory, so the §13100 affidavit qualifies. Independently, DE-221 qualifies: a surviving spouse exists and property_passes_to_survivor is true, and the spousal petition has no value cap or waiting period (Prob. Code §13500, §§13650–13656; Eligibility.lean SpousalPropertyPetitionEligible). direct_transfer, DE-305, and DE-310 are conclusively out (treatment 'counted' gives no direct basis; target is not California real property), and formal probate is not required while simplified routes qualify.
+
+> *Framework caveat:* The conclusive direct_transfer disqualification rests on the demo's closed-world premise that treatment 'counted' is an established fact; a real practitioner would first verify the account's titling (joint/POD) before ruling that out, but that is an input-fact question, not a divergence in the law.
+
+**Lean (ELIGIBLE) — correct.** Matches the hand derivation on the top verdict and all six route rows: personal_property_affidavit and spousal_property_petition qualify, the other four does_not_qualify with correct reason ids. The cents-to-dollars conversion is exact ('$65,000.00 ≤ $208,850.00'), spouse_passage assets are correctly zeroed out of the §13100 valuation, and the DE-221 row correctly applies only the survivor-exists + passes-or-belongs conjuncts (Eligibility.lean lines 122–127).
+
+**Gemini runs:** ELIGIBLE, ELIGIBLE, ERROR: malformed_case (invalid JSON; intended verdict in raw text was ELIGIBLE) — 2/3 correct.
+
+Route-level errors (even where the verdict was right):
+- Run 1: direct_transfer marked needs_information with an invented non-schema missing fact 'estate.assets[0].type_of_ownership', though treatment 'counted' is a supplied fact that conclusively establishes no direct-transfer basis (ground truth: does_not_qualify).
+- Run 2: spousal_property_petition marked does_not_qualify despite survivor_status='spouse' and property_passes_to_survivor=true — the only two conjuncts DE-221 needs; it instead keyed off the target asset's valuation treatment.
+- Run 3 (unparsed raw text): repeats the same spousal_property_petition does_not_qualify error and misstates the target's value as $650 instead of $65,000.
+
+Failure modes:
+- **closed_world_fact_treated_as_unknown** — “needs more information to determine if the asset directly passes ... (e.g., if it's a survivorship account)”  
+  Run 1's world-knowledge prior (real savings accounts might be joint or POD) overrides the input schema's semantics, where treatment:'counted' already encodes the §13050 answer; the helpfulness prior re-opens a question the data model has closed and even hallucinates a field ('type_of_ownership') that does not exist in the schema — pattern-completion toward a plausible intake checklist rather than evaluation of the supplied facts.
+- **attribute_binding_conflation** — “its treatment is 'counted' for small estate calculation, not 'spouse_passage'”  
+  Runs 2 and 3 bind the DE-221 eligibility test to the wrong feature: the per-asset §13050 valuation-treatment token instead of the case-level boolean property_passes_to_survivor=true. The salient 'spouse_passage' label on the sibling asset creates a contrastive lexical cue ('this asset lacks that tag, so no spousal route') that outcompetes rule application — surface token matching between the treatment enum and the route name substitutes for the stated conjunct list, which has no value cap and no treatment condition.
+- **unit_confusion_cents** — “valued at $650”  
+  Run 3 converts 6,500,000 cents to $650 — dropping four zeros instead of two. Long integers are tokenized as digit chunks, so exact division by 100 is positional-arithmetic the model approximates rather than computes; here the error is masked (both $650 and $65,000 are under the $208,850 cap, so the verdict text is unchanged), which is exactly why lossy cent handling is dangerous — it would silently flip near-threshold cases.
+- **output_format_fragility** — “"forms": []\n    ,\n    { (missing '}' closing the first route object)”  
+  Run 3 emitted ~3k tokens of deeply nested JSON without constrained decoding; bracket matching across that span is a working-memory task where one sampling step dropped a closing brace, and the parser then discarded an otherwise substantively ELIGIBLE answer. Schema adherence and free-text reasoning compete for the same token stream, so a single structural slip costs the entire run — a failure class a deterministic engine cannot have.
+
+
+### 4. `needs-info-unknown-value`
+
+**Headline:** Both engines and all three Gemini samples land the correct INCOMPLETE_INFO verdict, but Gemini run 3 corrupts two route rows — hallucinating non-schema missing facts to reopen direct_transfer and mislabeling the formal-probate fallback does_not_qualify — while Lean's table is exactly right.
+
+**Ground truth — INCOMPLETE_INFO.** Death 2025-05-10 puts the estate in the on-or-after-2025-04-01 band ($208,850 personal-property cap, court page Part 3 / Prob. Code §§13100-13101, §890). The target is personal property, 444 days > 40-day wait, successor/no-superior-right/no-proceeding all satisfied, and the known subtotal ($30,000) is under the cap, but asset 0's gross value is null (UNKNOWN), so the §13100 value test can be neither passed nor failed — the affidavit route is needs_information. Every other simplified route is conclusively disqualified on known facts (target not CA real property for DE-305/DE-310; survivor_status 'none' for DE-221; treatment 'counted' gives no direct-transfer basis), so with no route qualifying and one unresolved, the verdict is INCOMPLETE_INFO, with the formal-probate fallback also unresolved pending the same fact.
+
+> *Framework caveat:* The verdict itself is framework-independent — under the statute you genuinely cannot decide until the credit-union balance is known. Two row-level semantics are framework artifacts: (a) treating 'treatment: counted' as conclusively closing the direct-transfer question (in real life one would ask whether the brokerage account carries a TOD/beneficiary designation — the instinct Gemini run 3 acted on); (b) formal probate is legally always available regardless of estate value, so its 'needs_information' status encodes the demo's recommendation logic (fallback only when all else is disqualified), not legal availability.
+
+**Lean (INCOMPLETE_INFO) — correct.** Top verdict and all six route rows match the hand derivation exactly: direct_transfer/DE-305/DE-310/DE-221 does_not_qualify on known violations, personal_property_affidavit and the formal-probate fallback needs_information, both citing the precise missing fact estate.assets[0].gross_value_cents. It correctly refuses to treat the null value as either under or over the cap (unknown never treated as false), and correctly does not disqualify on the known $30,000 subtotal since it is under the $208,850 cap.
+
+**Gemini runs:** INCOMPLETE_INFO, INCOMPLETE_INFO, INCOMPLETE_INFO — 3/3 correct.
+
+Route-level errors (even where the verdict was right):
+- Run 3: direct_transfer flipped to needs_information with four hallucinated missing_facts that do not exist in the input schema (estate.assets[1].beneficiary_designated, .joint_tenancy, .transfer_on_death, .held_in_trust) — the schema's treatment='counted' already answers this conclusively as does_not_qualify.
+- Run 3: formal_probate_or_other_procedure marked does_not_qualify when the correct status is needs_information (an unresolved simplified route means the fallback is unresolved, not conclusively disqualified); its own detail text contradicts the status.
+- Run 1 (cosmetic): formal_probate needs_information row has empty missing_facts and omits the DE-111 form, where Lean lists estate.assets[0].gross_value_cents and DE-111.
+- Runs 1-3 (cosmetic): free-text reason ids drift from Lean's stable ids (e.g. not_real_property vs target_not_california_real_property), and runs 1-2 also omit DE-111 on the fallback row.
+
+Failure modes:
+- **closed_world_broken_by_world_knowledge** — “It is unknown if the Vanguard account has a designated beneficiary”  
+  The model's real-world prior (US brokerage accounts often carry TOD/beneficiary designations) overrides the closed-world schema in which treatment='counted' is a supplied, conclusive fact. It then back-fills the missing_facts array with plausible-sounding field paths that do not exist in the input schema — free-text JSON fields invite generation from the prior rather than restriction to observed keys. Only 1 of 3 samples did this, so it is a sampling-variance-exposed boundary failure, not a systematic one.
+- **status_enum_semantics_drift** — “Formal probate is not yet determined as the required path”  
+  The enum label does_not_qualify is polysemous: in natural language it can mean 'not the recommendation right now', while the framework defines it as 'conclusively disqualified'. Run 3 reasons correctly in prose (more info needed) but resolves the label by surface semantics of its own conclusion instead of the aggregation rule — schema adherence and chain-of-thought decouple, so the structured field contradicts the free-text detail on the same row.
+- **derived_missing_fact_omission** — “The personal property affidavit route is unresolved.”  
+  Run 1 marks the fallback needs_information but leaves missing_facts empty: the unknown value appears in the fallback's condition only transitively (via the unresolved affidavit route), and LLMs list missing facts where the unknown token appears syntactically in a route's own conjuncts, not facts propagated through an aggregation dependency. Lean computes the closure and lists the fact on both rows.
+
+
+### 5. `needs-info-unknown-death-date`
+
+**Headline:** Lean is exactly right (INCOMPLETE_INFO with death_date as the missing fact); all three Gemini runs wrongly return ELIGIBLE by resolving the unknown death date through threshold dominance ('under every band anyway'), lacking any concept of the model's source-snapshot boundary, with run 1 also hallucinating uncertainty on the schema-settled direct_transfer row.
+
+**Ground truth — INCOMPLETE_INFO.** The only viable route is the §13100–13101 personal-property affidavit, and its cap is band-keyed to the date of death (court page: $166,250 before 2022-04-01 / $184,500 through 2025-03-31 / $208,850 on or after 2025-04-01). With death_date null, the band cannot be fixed and the framework forbids resolving date-dependent checks (an unknown date could also fall past the 2026-12-31 snapshot boundary, where no threshold is supported), so the route is needs_information; the 40-day wait is independently satisfied via days_since_death=200. The other four simplified routes are conclusively disqualified on known facts (target is personal property, not real/primary-residence; survivor_status=none), and the DE-111 fallback cannot qualify while a simplified route is unresolved. No route qualifies and one needs information, so the verdict is INCOMPLETE_INFO.
+
+> *Framework caveat:* The verdict turns on the demo's snapshot-boundary rule, not on the statute alone: a dominance argument ($42,000 is under every §890 threshold ever published, and adjustments are inflation-indexed upward) would let a practitioner conclude the affidavit works for any actual past death date. The framework instead treats the unknown date as possibly outside the supported 2026-12-31 snapshot and refuses interval reasoning. Practically, though, INCOMPLETE_INFO is still the sound answer: a §13101 declaration must state the date of death and attach a certified death certificate, so the affidavit cannot be executed without this fact.
+
+**Lean (INCOMPLETE_INFO) — correct.** All six route rows match the hand derivation: direct_transfer does_not_qualify (treatment 'counted' gives no basis — a known fact, correctly not treated as unknown); personal_property_affidavit needs_information with missing_facts=[death_date] (the only genuinely unresolved conjunct, since the 40-day wait resolves from days_since_death=200); the two real-property routes and the spousal petition does_not_qualify on known violations; the DE-111 fallback needs_information because it can only qualify once all five simplified routes are conclusively out. Aggregation (no qualifies + one needs_information → INCOMPLETE_INFO) is applied correctly.
+
+**Gemini runs:** ELIGIBLE, ELIGIBLE, ELIGIBLE — 0/3 correct.
+
+Route-level errors (even where the verdict was right):
+- All runs: personal_property_affidavit marked 'qualifies' — should be needs_information (missing death_date); this drives the wrong ELIGIBLE verdict.
+- Run 1: direct_transfer marked needs_information with invented missing fact 'estate.assets[0].treatment_details' — treatment 'counted' is a known fact that conclusively disqualifies; runs 2 and 3 got this row right.
+- All runs: formal_probate_or_other_procedure marked does_not_qualify ('simplified route available') — should be needs_information; consistent with, and downstream of, the erroneous qualifies on the affidavit route.
+
+Failure modes:
+- **interval_dominance_over_unknown_date** — “"below the small estate threshold regardless of the exact date of death"”  
+  All three runs resolve an unknown fact by dominance: since $42,000 is under every enumerated band, the model concludes the cap check passes for any death date. This is world-knowledge-plausible monotone reasoning (thresholds only rise), but the framework marks date-dependent checks as unresolved when the date is null. Instruction-following loses to a strong helpfulness prior: given a numerically 'obvious' answer, the model completes the eligibility conclusion rather than emitting the epistemically correct needs_information.
+- **no_snapshot_boundary_concept** — “"which range from $166,250 to $208,850 depending on the unknown death date"”  
+  The model treats the three visible bands as the closed, complete possibility space for the unknown date. An LLM has no native notion of a versioned source snapshot — its training prior is that law is a timeless background fact — so 'unknown death date' collapses to 'some past date covered by my table', never 'possibly a date after 2026-12-31 for which the model supports no threshold at all'. That closed-world assumption is precisely what licenses the dominance argument in the previous mode.
+- **unknown_invented_on_known_fact** — “"It is unknown if the bank account has a pay-on-death (POD) designation"”  
+  Run 1 marks direct_transfer needs_information and fabricates a missing fact ('estate.assets[0].treatment_details') even though the schema's closed treatment vocabulary already settles the question: treatment='counted' conclusively means no direct-transfer basis. Real-world knowledge (bank accounts often carry POD designations) leaks past the schema semantics, manufacturing uncertainty about a decided fact — the mirror image of the main error, where decided-by-schema loses to plausible-in-the-world. Only 1 of 3 runs does this, showing it is a sampling-variance intrusion rather than systematic.
+
+
+### 6. `needs-info-inventory-not-confirmed`
+
+**Headline:** Lean is fully correct (INCOMPLETE_INFO with the right route table); all three Gemini runs wrongly return ELIGIBLE because they treat the null inventory_complete as a complete inventory, summing the two listed assets against the $208,850 cap and never surfacing the missing fact.
+
+**Ground truth — INCOMPLETE_INFO.** Death 2025-05-10 puts the case in the $208,850 personal-property band (simple-transfer.md lines 51-55, 185-193). The known counted assets total $98,000 (9,000,000 + 800,000 cents), and every procedural conjunct of Prob. Code sections 13100-13101 is satisfied (personal-property target, successor, no superior right, 444 days > 40, no proceeding). But requirement 1 of the court page (lines 110-112) caps the ESTATE'S total qualifying value, and with estate.inventory_complete = null that total is unknown - a partial subtotal under the cap does not establish the whole estate is under it - so the affidavit route is needs_information, not qualifies. The DE-305, DE-310, and DE-221 routes are conclusively disqualified on known facts (target is personal property, not CA real property or a primary residence; survivor_status = none and both spousal-passage flags are false), and the formal-probate fallback cannot be recommended while a simplified route is unresolved, so the verdict is INCOMPLETE_INFO.
+
+> *Framework caveat:* The discrete gating fact estate.inventory_complete is a demo construct (rules.md section 3), but it faithfully models the statutory burden: a section 13101 affiant must declare the gross value of ALL the decedent's California property is under the cap, which cannot be affirmed from an unconfirmed asset list. Outside the framework the practical answer is the same - confirm the full inventory first - so the verdict does not materially depend on the framework.
+
+**Lean (INCOMPLETE_INFO) — correct.** Verdict and all six route rows correct. direct_transfer does_not_qualify (treatment 'counted' gives no direct-transfer basis per the section 13050 table); personal_property_affidavit needs_information with exactly the right missing fact (estate.inventory_complete); DE-305 and DE-310 does_not_qualify (target not CA real property / not primary residence); DE-221 does_not_qualify (no survivor and both passage flags false); formal-probate fallback correctly held at needs_information rather than recommended, since a simplified route is still unresolved. No findings against Lean.
+
+**Gemini runs:** ELIGIBLE, ELIGIBLE, ELIGIBLE — 0/3 correct.
+
+Route-level errors (even where the verdict was right):
+- All 3 runs: personal_property_affidavit marked 'qualifies' instead of 'needs_information' - the null inventory_complete is never surfaced.
+- All 3 runs: formal_probate_or_other_procedure marked 'does_not_qualify' instead of 'needs_information' (a cascade from the affidavit error; internally consistent with each run's own wrong premise).
+- All 3 runs: missing_facts arrays are empty on every route row - estate.inventory_complete never appears anywhere in any run's output.
+- Not an error but notable: all runs converted cents correctly ($90,000 + $8,000 = $98,000) and picked the right $208,850 band, so the failure is purely epistemic, not numeric.
+
+Failure modes:
+- **unknown_treated_as_favorable** — “"The total qualifying estate value ($98,000) is below the $208,850 threshold"”  
+  Closed-world assumption over the input JSON: the model treats the listed assets as the exhaustive estate and sums them against the cap. A null field has almost no token salience next to concrete dollar figures, and the helpfulness/completion prior pushes toward a decisive favorable verdict. The prompt's guard ('unknown must never be treated as false') is one-directional; the model instead treated the unknown as TRUE (inventory complete), which literal instruction-following does not prohibit - it satisfied the letter of the rule while inverting its intent.
+- **no_epistemic_boundary** — “"missing_facts": [] on all six rows of every run”  
+  Emitting needs_information requires the model to represent and verbalize what it does NOT know, which autoregressive generation does poorly: the reasoning chain is built from facts that appear in the prompt, and an absent/null fact generates no forward signal. JSON-schema adherence compounds this - the qualify/does-not-qualify binary is the high-prior attractor for eligibility-checker outputs, and populating a missing_facts list has no template in the model's arithmetic-check chain.
+- **systematic_not_variance** — “"which is well below the threshold" (identical framing in runs 2 and 3)”  
+  All three temperature samples converge on the same wrong verdict with near-identical sum-and-compare reasoning, so this is a deterministic prior failure, not sampling noise: 'eligibility = sum listed values, compare to threshold' is a heavily stereotyped pattern in training data, and no sample deviates into questioning whether the list is complete. Majority-vote ensembling would not rescue this case.
+
+
+### 7. `over-cap-despite-unknowns`
+
+**Headline:** Lean is exactly right (OTHER_FORM_REQUIRED, all six rows correct); Gemini fails 2 of 3 runs by letting the unappraised storage unit mask that the known $240,000 subtotal already conclusively exceeds the $208,850 cap — once by never summing the known assets, once by hallucinating nonexistent beneficiary/survivorship fields for the savings account.
+
+**Ground truth — OTHER_FORM_REQUIRED.** Death 2025-06-01 puts the §13100 personal-property cap at $208,850 (court page: 'On or after April 1, 2025 | $208,850'; thresholds compare GROSS qualifying value). The two known counted assets already sum to $240,000 (15,000,000 + 9,000,000 cents), and the unappraised third asset is a non-negative addend, so the cap is conclusively exceeded regardless of the unknown — a known violation beats an unknown. Every other simplified route is conclusively disqualified on known facts: target treatment 'counted' gives no §13050/§13500 direct-transfer basis; the target is personal property, so DE-305 (§13200) and DE-310 (§§13150-13154) require real property; survivor_status is 'none', so DE-221 (§13500) fails. With all five simplified routes disqualified, only formal probate (DE-111) remains.
+
+> *Framework caveat:* Essentially none: the legal conclusion (small-estate affidavit unavailable because §13050 gross qualifying value exceeds $208,850; full probate needed) holds outside the framework too, since the monotonicity argument is statutory arithmetic, not a demo convention. The only framework artifacts are (a) 'formal_probate qualifies' being a route status rather than a statutory eligibility, and (b) direct_transfer being decided solely from the asserted treatment='counted' — in the real world whether the savings account has a POD/joint designation is a factual question, but the input asserts it is counted in the probate estate.
+
+**Lean (OTHER_FORM_REQUIRED) — correct.** All six route rows match the hand derivation: direct_transfer does_not_qualify (no basis from treatment='counted'); personal_property_affidavit does_not_qualify with the exactly right reason ('Known personal-property value $240,000.00 exceeds the $208,850.00 limit') — correctly applying violation-beats-unknown to the null-valued storage unit; DE-305 and DE-310 does_not_qualify (target not CA real property / not primary residence); DE-221 does_not_qualify (no survivor); formal-probate fallback qualifies. This case exercises the hardest aggregation rule (known over-cap subtotal disqualifies despite unknowns) and Lean gets it right deterministically in 163 ms.
+
+**Gemini runs:** INCOMPLETE_INFO, INCOMPLETE_INFO, OTHER_FORM_REQUIRED — 1/3 correct.
+
+Failure modes:
+- **hallucinated_missing_facts_open_world_leakage** — “It is unknown if the 'Citibank savings account' passes directly to a survivor or named beneficiary”  
+  Run 1 invented schema fields (estate.assets[0].is_survivorship_account, has_named_beneficiary) that do not exist in the input. The framework decides direct_transfer solely from the target's treatment, and treatment='counted' is a known fact that conclusively rules it out. The model's world knowledge that real bank accounts can carry POD/joint designations leaks past the closed fact schema, and its trained helpfulness behavior of proposing 'what else would you need to know' manufactures an unknown — flipping a fully-determined does_not_qualify into needs_information and the top verdict into INCOMPLETE_INFO.
+- **unknown_overrides_known_violation** — “the value of another asset in the estate (`estate.assets[2].gross_value_cents`) is unknown, making the total estate value undetermined”  
+  Run 2 pattern-matched 'a null exists → needs_information' instead of applying the precedence rule that a known violation beats unknowns. The prompt's emphatic 'unknown must never be treated as false' instruction acts as a strong lexical trigger that competes with — and here defeats — the monotonicity argument (an unknown non-negative addend cannot pull an already-over-cap $240,000 subtotal back under $208,850). Applying that argument requires an extra arithmetic step the cheap pattern skips.
+- **failure_to_aggregate_before_threshold_check** — “While the target asset itself is below this value”  
+  Run 2 compared the single target asset ($150,000) to the $208,850 cap instead of summing all counted assets, so it never noticed the subtotal was over the limit. Summing 15,000,000 + 9,000,000 cents and converting to dollars is exactly the kind of multi-token big-integer arithmetic LLMs handle lossily and preferentially avoid; skipping the sum left the null asset as the apparent blocker.
+- **sampling_variance_on_multi_step_rule** — “$150,000 (Citibank savings) + $90,000 (Vanguard index fund) = $240,000. This amount already exceeds the $208,850 threshold”  
+  Run 3 proves the correct chain (sum first, then apply violation-beats-unknown) is within the model's capability, yet across three samples of identical input the model produced two different wrong answers and one right one. Whether the deep arithmetic chain or the shallow 'null → incomplete' heuristic wins is decided by sampling, giving a 1/3 accuracy on the rule this test case exists to probe — a nondeterminism a formal engine cannot exhibit.
+- **fallback_row_incoherence_downstream** — “Other simplified routes require more information before concluding formal probate is necessary.”  
+  Runs 1 and 2 also mis-state the formal_probate fallback row (does_not_qualify and needs_information respectively). These are internally consistent with their own erroneous simplified-route rows rather than independent errors, but they show error propagation: because verdict aggregation is derived from route statuses, one hallucinated or unaggregated route corrupts both the fallback row and the top verdict — the JSON schema forces a status for every row, so a single upstream mistake is amplified into a fully-populated but wrong table.
+
+
+### 8. `too-soon-20-days`
+
+**Headline:** All engines are correct — Lean and all three Gemini runs return OTHER_FORM_REQUIRED with matching route statuses; the only Gemini defects are reason-level (run 1 bleeds the DE-305 debts-paid conjunct into the 13100 row, run 3 misattributes the direct-transfer disqualification), while the deeper issue is the framework's own mapping of a self-curing 40-day wait to 'other form required'.
+
+**Ground truth — OTHER_FORM_REQUIRED.** The sole asset is a $10,000 personal checking account (1,000,000 cents), well under the $208,850 post-2025-04-01 cap, and successor/superior-right/no-proceeding facts are all satisfied, but only 20 days have elapsed and the court page (Part 2, requirement 4; Prob. Code 13100) requires 'at least 40 days have passed since the death' — a known violation, so the personal-property affidavit does_not_qualify. The target is not California real property (killing DE-305 and DE-310, which also fail the six-month/debts-paid and 40-day conjuncts respectively), survivor_status is none (killing DE-221), and treatment 'counted' provides no direct-transfer basis. With every simplified route conclusively disqualified and no unknowns, the framework's precedence rule 3 yields OTHER_FORM_REQUIRED with the DE-111 fallback row qualifying.
+
+> *Framework caveat:* Legally this is a 'wait', not an 'other form required': the 40-day gate self-cures on 2026-08-17, after which the 13100 affidavit plainly qualifies, and formal probate is not actually required. The trinary verdict set has no NOT_YET status, so the framework mislabels temporary ineligibility as the formal-probate fallback; notably Gemini runs 2 and 3 spontaneously added the correct wait-and-refile advice in free text, which the Lean output does not surface.
+
+**Lean (OTHER_FORM_REQUIRED) — correct.** Verdict and all six route rows exactly match the hand derivation. direct_transfer: does_not_qualify (no basis from 'counted') — correct. personal_property_affidavit: does_not_qualify citing only waiting_period_not_met — correct, and correctly omits debts-paid, which is not a 13100 conjunct (Eligibility.lean PersonalPropertyAffidavitEligible, lines 74-88; court page Part 2 lists four requirements, none about debts). small_value_RP: three true violations (not CA real, six months, debts unpaid per 13200(a)(8)). primary_residence: three true violations. spousal: two true violations. formal_probate qualifies as the fallback. No missing_facts anywhere, correctly, since every conjunct is known.
+
+**Gemini runs:** OTHER_FORM_REQUIRED, OTHER_FORM_REQUIRED, OTHER_FORM_REQUIRED — 3/3 correct.
+
+Route-level errors (even where the verdict was right):
+- Run 1: personal_property_affidavit row adds a spurious second reason 'funeral_last_illness_and_unsecured_debts_not_paid' — debts-paid is a DE-305 13200(a)(8) conjunct, not a 13100 requirement (court page Part 2 lists four requirements, none about debts; Eligibility.lean's PersonalPropertyAffidavitEligible has no debts conjunct). Status still correct.
+- Run 3: direct_transfer row grounds the disqualification in 'property_passes_to_survivor' being false and survivor_status, but the rule actually keys on the target asset's treatment ('counted' maps to no direct-transfer basis in the rules.md section 5 table); right status, wrong mechanism.
+
+Failure modes:
+- **cross_route_conjunct_bleed** — “unsecured debts are not indicated as paid”  
+  The prompt presents all case fields in one flat JSON, and the model retrieves associatively rather than binding each conjunct to its statutory route: a salient negative field (debts_paid=false) gets attached to every route it superficially fits, so the DE-305-only 13200(a)(8) condition bleeds into the 13100 affidavit row. A helpfulness prior toward citing more corroborating reasons compounds it — extra reasons feel thorough even when statutorily wrong.
+- **surface_field_anchoring** — “'property_passes_to_survivor' being false”  
+  For direct_transfer the model anchors on input fields whose names lexically resemble the route concept (survivor/beneficiary flags) instead of the actual dependency (the asset's treatment enum). This is token-level pattern matching between field names and route semantics substituting for the rule's real conjunct structure; the conclusion happens to coincide here, so the shortcut goes unpunished.
+
+
+### 9. `eligible-primary-residence`
+
+**Headline:** Both engines reach the correct ELIGIBLE verdict via the DE-310 primary-residence petition; Lean's route table is exact, while Gemini run 1 hedges the decidable direct_transfer row into needs_information with a fabricated missing-fact field, and two runs recite conjuncts the DE-310 route does not have.
+
+**Ground truth — ELIGIBLE.** Death on 2025-06-15 puts the case in the post-2025-04-01 band, where AB 2016 (Prob. Code §§13150-13157; simple-transfer.md lines 195-207) sets a $750,000 cap on the DE-310 petition restricted to the decedent's California primary residence. The target is a counted CA primary residence at gross $600,000 (60,000,000 cents; the $250,000 encumbrance is not subtractable, line 79), 408 days have elapsed (≥40), the claimant is the successor, no proceeding is pending, and the inventory is complete, so primary_residence_petition qualifies and the verdict is ELIGIBLE. Every other route is conclusively disqualified: real-property target bars the §13100 affidavit, $600,000 > $69,625 bars DE-305 (§13200), survivor_status 'none' bars DE-221, and treatment 'counted' provides no §13050 direct-transfer basis.
+
+> *Framework caveat:* Only conventions, not substance: real-world §13152 would require a probate-referee Inventory and Appraisal to establish the $600,000 value, and formal probate is always legally available (the framework's 'does_not_qualify' on the fallback row means 'not needed', not legally barred). Neither changes the ELIGIBLE outcome.
+
+**Lean (ELIGIBLE) — correct.** Verdict and all six route rows match the hand derivation exactly. Notably it gets both value checks right from the same asset: the $600,000 residence disqualifies DE-305 against the $69,625 cap while qualifying DE-310 against the $750,000 AB 2016 cap, at gross value ignoring the $250,000 encumbrance. It also correctly treats treatment='counted' as a known fact conclusively barring direct_transfer rather than an unknown.
+
+**Gemini runs:** ELIGIBLE, ELIGIBLE, ELIGIBLE — 3/3 correct.
+
+Route-level errors (even where the verdict was right):
+- Run 1: direct_transfer marked needs_information with fabricated missing fact 'estate.assets[0].direct_transfer_eligibility', though treatment='counted' is a known input that conclusively yields does_not_qualify (no §13050 basis).
+- Runs 1-3 (cosmetic): formal_probate row omits the DE-111 form that Lean lists; run 2 additionally leaves that row's reasons array empty.
+
+Failure modes:
+- **known_fact_treated_as_unknown** — “'Direct transfer' eligibility for the asset is unknown.”  
+  The treatment enum is a closed world: 'counted' affirmatively means no direct-transfer basis. But the LLM's calibrated-hedging prior treats the absence of a natural-language cue like 'joint tenancy' as missing evidence rather than a negation, so it downgrades a decidable known violation to needs_information — the mirror image of the unknown-treated-as-favorable failure, and only harmless here because another route already qualified.
+- **hallucinated_missing_fact_path** — “estate.assets[0].direct_transfer_eligibility”  
+  Once run 1 committed to needs_information, the output schema demanded a missing_facts entry; schema-adherence pressure then competed with grounding, and the model confabulated a plausible-sounding field path that does not exist in the input schema instead of citing a real input field — format completion generating a fabricated identifier.
+- **conjunct_over_attribution** — “no superior right, debts paid) are met”  
+  Runs 1 and 3 recite superior-right and debts-paid as DE-310 conjuncts, but the framework's primary-residence route has neither (rules.md notes it explicitly). The LLM blends the checklists of adjacent similar routes (DE-305's conjuncts bleed into DE-310) — prototype interference across near-duplicate templates in context rather than tracking each route's exact conjunct set. Harmless here since those facts were true, but it would wrongly disqualify a DE-310 case with unpaid debts.
+
+
+### 10. `eligible-small-value-real-property`
+
+**Headline:** Lean is fully correct and Gemini got the law right in all three runs, but run 1 dropped a single closing brace in its JSON so the harness scored a semantically correct ELIGIBLE answer as a malformed_case error (2/3 runs correct as delivered).
+
+**Ground truth — ELIGIBLE.** Death 2025-09-01 falls in the on/after-2025-04-01 band, so the Prob. Code §13200 small-value real-property limit is $69,625 (simple-transfer.md lines 209-217). The only counted CA real property is the $55,000 lot (5,500,000 cents), under the cap; six months have elapsed (330 days), no proceeding is pending, the claimant is the successor with no superior right, and funeral/last-illness/unsecured debts are paid (§13200(a)(8)) with inventory confirmed complete — so DE-305 qualifies and the verdict is ELIGIBLE. All other simplified routes are conclusively disqualified on known facts: the target is counted real property (no direct-transfer basis, not personal property per §13100, not the primary residence per AB 2016 §§13150-13154) and survivor_status is none (no DE-221).
+
+> *Framework caveat:* Only the fallback row's semantics are framework-specific: formal probate (DE-111) is always legally available, but the framework marks it does_not_qualify to mean 'not needed' when a simplified route qualifies. The substantive legal answer — DE-305 works for this lot — is framework-independent.
+
+**Lean (ELIGIBLE) — correct.** Verdict and all six route rows match the hand derivation exactly. The DE-305 row's detail correctly sums only counted California real property ($55,000.00 <= $69,625.00 per the on/after-2025-04-01 band of §13200), and the four disqualified simplified routes cite the right facts (treatment 'counted' gives no direct-transfer basis; target not personal property; not primary residence; no surviving spouse/partner). Fallback correctly does_not_qualify because DE-305 qualifies.
+
+**Gemini runs:** null (malformed_case: LLM output was not valid JSON), ELIGIBLE, ELIGIBLE — 2/3 correct.
+
+Route-level errors (even where the verdict was right):
+- No route-row status errors in the two parseable runs — all six statuses match ground truth in runs 2 and 3. Cosmetic divergence only: both runs omit the forms arrays Lean populates on non-qualifying rows (DE-310/DE-315 on primary_residence_petition, DE-111 on the fallback), and run 1's route table is empty solely because parsing failed, not because its content was wrong.
+
+Failure modes:
+- **output_format_fragility** — “"forms": []\n    ,\n    {”  
+  Run 1's answer was semantically correct end-to-end (verdict ELIGIBLE, all six route statuses matching ground truth are visible in the raw text), but a single closing brace was dropped after the first route object, so the harness parsed it as malformed_case with verdict null. Mechanistically: autoregressive decoding emits JSON token by token with no syntactic stack, and six near-identical nested route objects create a strong repetition pattern in which the model occasionally skips a boundary token when transitioning between objects; the strict parser then converts a fully correct legal analysis into a hard failure. Schema adherence in LLMs is probabilistic, and long (~2,800-token) nested outputs multiply the per-token chance of one structural slip; there is no self-validation pass before emission.
+- **threshold_misapplication_latent** — “below the general small estate threshold of $208,850”  
+  Run 2 (verdict correct) gratuitously compared the whole $95,000 estate against the §13100 personal-property cap, which is irrelevant to DE-305 — §13200 caps only the gross counted CA real property at $69,625. This is the helpfulness/retrieval prior at work: the model surfaces the most salient memorized threshold for 'small estate' even when the route under evaluation does not consume it. Benign here because both comparisons pass, but on a case with real property under $69,625 and a total estate over $208,850 this conflation could flip a DE-305 row to does_not_qualify incorrectly.
+
+
+### 11. `pre-2022-death-over-old-cap`
+
+**Headline:** Lean and 2 of 3 Gemini runs correctly return OTHER_FORM_REQUIRED ($175,000 exceeds the pre-2022 $166,250 cap fixed by date of death); Gemini run 1 flips to INCOMPLETE_INFO by hallucinating unknown account-titling facts that the treatment='counted' enum already settles.
+
+**Ground truth — OTHER_FORM_REQUIRED.** Death on 2021-10-01 falls in the pre-2022-04-01 band, where the Prob. Code §§13100-13101 personal-property affidavit limit is $166,250 (court self-help page, threshold tables); the sole counted asset is $175,000 (17,500,000 cents), over the cap, and the applicable threshold is fixed by date of death, so being under today's $208,850 does not help. The target is personal property (kills DE-305 and DE-310 routes), survivor_status is a known 'none' (kills DE-221), and treatment 'counted' provides no direct-transfer basis. With all five simplified routes conclusively disqualified on known facts — the case JSON has no null fields — the formal-probate fallback (DE-111) is the only route, i.e. OTHER_FORM_REQUIRED.
+
+> *Framework caveat:* The conclusive disqualification of direct_transfer rests on the demo's closed 'treatment' enum stipulating the account is 'counted' (no POD beneficiary, joint titling, or TOD); in real practice account titling is a factual question a practitioner would verify first. Given the stipulated facts, though, the legal outcome is the same, and the threshold-by-death-date rule is genuine law (§890/DE-300), not a framework artifact.
+
+**Lean (OTHER_FORM_REQUIRED) — correct.** All six route rows match the hand derivation. The dispositive row cites 'Known personal-property value $175,000.00 exceeds the $166,250.00 limit' — correct cents-to-dollars conversion of 17,500,000 cents and correct pre-2022-04-01 band per the court page and rules.md §6. The remaining simplified routes are disqualified on known facts (not real property; not primary residence; no survivor), and the DE-111 fallback correctly fires only because all five are conclusively out.
+
+**Gemini runs:** INCOMPLETE_INFO, OTHER_FORM_REQUIRED, OTHER_FORM_REQUIRED — 2/3 correct.
+
+Route-level errors (even where the verdict was right):
+- Run 1: direct_transfer marked needs_information with four fabricated missing-fact paths (beneficiary_named, joint_tenancy, tod, multiple_party_account) that do not exist in the input schema; treatment='counted' is a known fact yielding does_not_qualify.
+- Run 1: formal_probate_or_other_procedure marked 'qualifies' while direct_transfer was unresolved, violating the rule that the fallback qualifies only when all five simplified routes are conclusively disqualified (and inconsistent with its own INCOMPLETE_INFO top verdict).
+
+Failure modes:
+- **phantom_unknowns_from_schema_absent_fields** — “needs additional information about how the account was titled”  
+  The prompt's 'null means UNKNOWN, never treat unknown as false' directive interacts with the model's world-knowledge prior that real bank accounts can carry POD/joint/TOD titling: run 1 treats attributes absent from the schema (it invents estate.assets[0].beneficiary_named, .joint_tenancy, .tod, .multiple_party_account) as null-valued unknowns, instead of binding the closed treatment enum ('counted') as the authoritative, fully-determined encoding of titling. Epistemic-humility instruction-following overrides schema grounding — a case with zero null fields gets manufactured unknowns.
+- **fallback_gating_inconsistency** — “making full probate a potential required procedure”  
+  Run 1 marks the formal-probate fallback 'qualifies' while simultaneously holding direct_transfer as needs_information — violating the framework rule that the fallback qualifies only when all five simplified routes are conclusively disqualified, and contradicting its own INCOMPLETE_INFO verdict. Mechanistically, route rows are generated locally without a global consistency pass, and the forced status enum flattens the model's hedged free-text ('potential required') into a definite 'qualifies' — JSON-schema adherence competing with the reasoning it wrote.
+- **sampling_variance_on_epistemic_boundary** — “The case indicates no basis for direct transfer”  
+  Runs 2 and 3 read the identical treatment='counted' field as a determinate 'no direct-transfer basis' while run 1 read it as unknown — a 1-in-3 verdict flip on identical input. The decision of whether an enum value closes off unstated attributes sits within temperature noise rather than being deterministically resolved, which is exactly the class of boundary a symbolic engine never wobbles on. Notably no run mis-handled the large cent value (all rendered 17,500,000 cents as $175,000) or the date-of-death band, so the instability is purely epistemic, not numeric.
+
+
+### 12. `error-after-snapshot`
+
+**Headline:** Lean correctly refuses with after_snapshot; Gemini refuses only 1 of 3 times (and with the wrong error label), while the other two runs both ignore the 2026-12-31 snapshot boundary and misread 3,000,000 cents as $300,000, producing OTHER_FORM_REQUIRED where even the on-the-merits answer would have been ELIGIBLE.
+
+**Ground truth — ERROR (after_snapshot; verdict null, no route table).** The death date 2027-03-01 exceeds the model's supported snapshot end of 2026-12-31 (snapshotEnd in Date.lean:67; rules.md §4: 'a known date after 2026-12-31 ⇒ case error after_snapshot'). Case errors return verdict:null with a top-level error object and an empty route list — a date error is an error state, never one of the three verdicts. The court page's threshold bands (simple-transfer.md lines 51-55) were fetched 2026-07-28 and the demo declines to assert law for later deaths, so no route analysis is the correct output.
+
+> *Framework caveat:* The ERROR outcome is purely a demo-framework artifact, not law. The Probate Code does not 'error' for a March 2027 death: the $208,850 band (deaths on/after 2025-04-01) would presumably govern until the next §890 triennial adjustment on 2028-04-01 (simple-transfer.md line 159), and on the true facts — personal property worth $30,000 (3,000,000 cents), 100 days elapsed, no proceeding, successor with no superior right — the §13100 affidavit would qualify, making the real-world answer ELIGIBLE. Note Gemini's substantive runs still got that merits answer wrong because of a separate 10x value misread.
+
+**Lean (ERROR (after_snapshot)) — correct.** Lean returned verdict:null with error type 'after_snapshot' and detail 'The death date is after 2026-12-31, the model's supported snapshot end' — exactly matching rules.md §4 and the hardcoded snapshotEnd = 2026-12-31 in AlixHack/SimpleProbate/Date.lean:67 (error string emitted at Api.lean:284-286; Examples.lean proves classifyDeathDate ⟨2027,1,1⟩ = .error .afterSnapshot by decide). Empty route list is correct: case errors suppress the six-route table.
+
+**Gemini runs:** ERROR (null verdict, but error.type='malformed_case' instead of 'after_snapshot'), OTHER_FORM_REQUIRED, OTHER_FORM_REQUIRED — 1/3 correct.
+
+Route-level errors (even where the verdict was right):
+- Run 1 (correct refusal, no route rows to grade): error.type is 'malformed_case' where the spec reserves that for structural breakage (bad target_index, negative money) and requires 'after_snapshot' for post-2026-12-31 dates — right behavior, wrong enum.
+- Runs 2 and 3 (wrong verdict, so rows are moot but doubly wrong): the personal_property_affidavit row is disqualified on a value inflated 10x ($300,000 vs the true $30,000) — on the model's own non-snapshot framing that row should have been 'qualifies', flipping the verdict to ELIGIBLE.
+- Runs 2 and 3 attach forms (DE-305, DE-310/DE-315, DE-221/DE-226) to does_not_qualify rows — cosmetic schema noise; Lean emits forms only where relevant.
+
+Failure modes:
+- **no_epistemic_boundary** — “"exceeds the small estate threshold of $208,850 for deaths on or after April 1, 2025" (run 3, applied to a 2027-03-01 death)”  
+  LLMs carry no internal representation of a source-snapshot validity window: the threshold band 'on or after April 1, 2025' reads as open-ended and pattern-matches any later date, and the instruction-tuned prior toward completing the requested six-route JSON strongly outweighs the rarely-sampled refuse-with-error branch. That only 1 of 3 runs refused shows the boundary rule is represented but weakly weighted — sampling variance decides whether the refusal or the substantive-analysis continuation wins.
+- **unit_confusion_cents** — “"a Wells Fargo checking account valued at $300,000" (runs 2 and 3; gross_value_cents is 3,000,000 = $30,000)”  
+  Large integers are tokenized in multi-digit chunks, and cents-to-dollars division is done 'by eye' in a single forward pass rather than verified arithmetically — dropping one zero instead of two yields a plausible round figure 10x too high. Both non-refusing runs made the identical misconversion, which flipped $30,000 <= $208,850 into an over-cap disqualification; even ignoring the snapshot rule, the merits verdict (ELIGIBLE via the §13100 affidavit) was inverted to OTHER_FORM_REQUIRED. The error's consistency across runs suggests a systematic conversion bias, not one-off noise.
+- **error_taxonomy_collapse** — “"considered a malformed case according to the system's constraints" (run 1)”  
+  The model retrieved the correct high-level behavior (refuse, verdict null) but mapped the out-of-range date onto the wrong error enum: near-synonymous categories (after_snapshot / invalid_date / malformed_case) collapse toward the broadest, most generic label when JSON-schema filling competes with precise recall of the spec's taxonomy — 'malformed' is the higher-frequency catch-all term for a bad input in training data, so it wins over the domain-specific 'after_snapshot'.
+

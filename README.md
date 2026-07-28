@@ -160,3 +160,10 @@ The spousal property petition has no value cap in this model.
 
 The source-as-of date and full URLs are recorded in
 `docs/superpowers/specs/2026-07-28-california-simple-transfer-design.md`.
+
+## Interactive demo
+
+`demo/` contains a web app that runs the same case through per-query Gemini
+inference and through this formalization side by side — verdicts, per-route
+status, latency, tokens, and cost. See [demo/README.md](demo/README.md) to run
+it.

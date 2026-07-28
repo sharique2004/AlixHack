@@ -10,6 +10,7 @@ import SimpleProbate.Examples.Case
 import SimpleProbate.Examples.EligibilityAssessment
 import SimpleProbate.Examples.ProcedureExactness
 import SimpleProbate.Examples.ProcedureAssessment
+import SimpleProbate.Examples.Api
 
 namespace SimpleProbate.Examples
 
