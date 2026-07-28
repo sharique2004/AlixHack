@@ -30,17 +30,19 @@ example :
         survivingSpouseEarnings := Money.dollars 20_875
       } := by decide
 
-def countedPersonal (name : String) (gross encumbrances : Money) : Asset := {
+def countedPersonal (id : Nat) (name : String) (gross encumbrances : Money) : Asset := {
+  id := ⟨id⟩
   name := name
   kind := .personal
-  grossValue := gross
+  currentGrossValue := gross
+  dateOfDeathValue := gross
   encumbrances := encumbrances
   treatment := .counted
 }
 
 def estateAtPersonalCap : Estate := {
   assets := [
-    countedPersonal "account" (Money.dollars 208_850) (Money.dollars 80_000)
+    countedPersonal 1 "account" (Money.dollars 208_850) (Money.dollars 80_000)
   ]
 }
 
@@ -50,40 +52,43 @@ example :
 
 example :
     ({ assets := [
-      countedPersonal "account" (Money.dollars 100_000) (Money.dollars 99_000),
-      { countedPersonal "joint account" (Money.dollars 500_000) 0 with
+      countedPersonal 2 "account" (Money.dollars 100_000) (Money.dollars 99_000),
+      { countedPersonal 3 "joint account" (Money.dollars 500_000) 0 with
         treatment := .jointTenancy }
     ] } : Estate).personalAffidavitValue ⟨2026, 7, 28⟩ =
       .ok (Money.dollars 100_000) := by decide
 
 example :
     ({ assets := [
-      { countedPersonal "salary" (Money.dollars 30_875) 0 with
+      { countedPersonal 4 "salary" (Money.dollars 30_875) 0 with
         treatment := .employmentCompensation }
     ] } : Estate).personalAffidavitValue ⟨2026, 7, 28⟩ =
       .ok (Money.dollars 10_000) := by decide
 
 example :
     ({ assets := [
-      { countedPersonal "military pay" (Money.dollars 100_000) 0 with
+      { countedPersonal 5 "military pay" (Money.dollars 100_000) 0 with
         treatment := .militaryCompensation }
     ] } : Estate).personalAffidavitValue ⟨2026, 7, 28⟩ = .ok 0 := by decide
 
 example :
     ({ assets := [{
+      id := ⟨6⟩
       name := "California parcel"
       kind := .californiaReal
-      grossValue := Money.dollars 69_625
+      currentGrossValue := Money.dollars 69_625
+      dateOfDeathValue := Money.dollars 69_625
       encumbrances := Money.dollars 60_000
       treatment := .counted
     }] } : Estate).smallValueRealPropertyValue = Money.dollars 69_625 := by decide
 
 def personalTarget : Asset :=
-  countedPersonal "account" (Money.dollars 208_850) 0
+  countedPersonal 7 "account" (Money.dollars 208_850) 0
 
 def personalTargetOverCap : Asset := {
   personalTarget with
-  grossValue := Money.dollars 208_850 + 1
+  currentGrossValue := Money.dollars 208_850 + 1
+  dateOfDeathValue := Money.dollars 208_850 + 1
 }
 
 def base2026Case : TransferCase := {
@@ -114,9 +119,11 @@ example : routeEligible { base2026Case with
     .personalPropertyAffidavit = .ok false := by decide
 
 def smallRealTarget : Asset := {
+  id := ⟨8⟩
   name := "small parcel"
   kind := .californiaReal
-  grossValue := Money.dollars 69_625
+  currentGrossValue := Money.dollars 69_625
+  dateOfDeathValue := Money.dollars 69_625
   treatment := .counted
 }
 
@@ -134,7 +141,8 @@ example : routeEligible { base2026Case with
 
 def smallRealTargetOverCap : Asset := {
   smallRealTarget with
-  grossValue := Money.dollars 69_625 + 1
+  currentGrossValue := Money.dollars 69_625 + 1
+  dateOfDeathValue := Money.dollars 69_625 + 1
 }
 
 example : routeEligible { base2026Case with
@@ -144,9 +152,11 @@ example : routeEligible { base2026Case with
     .smallValueRealPropertyAffidavit = .ok false := by decide
 
 def primaryResidenceTarget : Asset := {
+  id := ⟨9⟩
   name := "primary residence"
   kind := .californiaReal
-  grossValue := Money.dollars 750_000
+  currentGrossValue := Money.dollars 750_000
+  dateOfDeathValue := Money.dollars 750_000
   treatment := .counted
   includedInPrimaryResidencePetition := true
   isPrimaryResidence := true
@@ -159,16 +169,21 @@ example : routeEligible { base2026Case with
 
 example : routeEligible { base2026Case with
     estate := { assets := [
-      { primaryResidenceTarget with grossValue := Money.dollars 750_000 + 1 }
+      { primaryResidenceTarget with
+        currentGrossValue := Money.dollars 750_000 + 1
+        dateOfDeathValue := Money.dollars 750_000 + 1 }
     ] }
     target := { primaryResidenceTarget with
-      grossValue := Money.dollars 750_000 + 1 } }
+      currentGrossValue := Money.dollars 750_000 + 1
+      dateOfDeathValue := Money.dollars 750_000 + 1 } }
     .primaryResidencePetition = .ok false := by decide
 
 def millionDollarRealTarget : Asset := {
+  id := ⟨10⟩
   name := "unlisted million-dollar primary residence"
   kind := .californiaReal
-  grossValue := Money.dollars 1_000_000
+  currentGrossValue := Money.dollars 1_000_000
+  dateOfDeathValue := Money.dollars 1_000_000
   treatment := .counted
   isPrimaryResidence := true
 }
@@ -453,7 +468,7 @@ example :
 example :
     ({ assets := [
       { personalTarget with treatment := .jointTenancy },
-      { countedPersonal "ordinary account" (Money.dollars 208_850) 0 with
+      { countedPersonal 11 "ordinary account" (Money.dollars 208_850) 0 with
         includedInPrimaryResidencePetition := false }
     ] } : Estate).personalAffidavitValue ⟨2026, 12, 31⟩ =
       .ok (Money.dollars 208_850) := by decide
@@ -461,12 +476,14 @@ example :
 example : routeEligible { base2026Case with
     estate := { assets := [{
       primaryResidenceTarget with
-        grossValue := Money.dollars 750_000
+        currentGrossValue := Money.dollars 750_000
+        dateOfDeathValue := Money.dollars 750_000
         isPrimaryResidence := false
     }] }
     target := {
       primaryResidenceTarget with
-        grossValue := Money.dollars 750_000
+        currentGrossValue := Money.dollars 750_000
+        dateOfDeathValue := Money.dollars 750_000
         isPrimaryResidence := false
     } }
     .primaryResidencePetition = .ok false := by decide
