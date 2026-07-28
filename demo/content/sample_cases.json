@@ -1,0 +1,523 @@
+[
+ {
+  "name": "eligible-personal-affidavit",
+  "blurb": "Two personal assets totaling $80,000, 444 days since death - qualifies for the \u00a713100 affidavit",
+  "expected_verdict": "ELIGIBLE",
+  "case": {
+   "death_date": {
+    "year": 2025,
+    "month": 5,
+    "day": 10
+   },
+   "days_since_death": 444,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Chase checking account",
+      "kind": "personal",
+      "gross_value_cents": 5000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     },
+     {
+      "name": "Schwab brokerage account",
+      "kind": "personal",
+      "gross_value_cents": 3000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "Bank accounts under the limit"
+ },
+ {
+  "name": "eligible-direct-transfer",
+  "blurb": "Condo held in joint tenancy passes outside probate immediately - no 40-day wait needed",
+  "expected_verdict": "ELIGIBLE",
+  "case": {
+   "death_date": {
+    "year": 2026,
+    "month": 7,
+    "day": 3
+   },
+   "days_since_death": 25,
+   "six_months_elapsed": false,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": false,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Oakland condo held in joint tenancy",
+      "kind": "california_real",
+      "gross_value_cents": 45000000,
+      "encumbrances_cents": 20000000,
+      "treatment": "joint_tenancy",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     },
+     {
+      "name": "Mechanics Bank checking account",
+      "kind": "personal",
+      "gross_value_cents": 1200000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "A condo held in joint tenancy"
+ },
+ {
+  "name": "eligible-multiple-routes",
+  "blurb": "Surviving spouse: DE-221 spousal petition and the \u00a713100 affidavit both qualify",
+  "expected_verdict": "ELIGIBLE",
+  "case": {
+   "death_date": {
+    "year": 2025,
+    "month": 8,
+    "day": 20
+   },
+   "days_since_death": 342,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "spouse",
+   "property_passes_to_survivor": true,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Golden 1 savings account",
+      "kind": "personal",
+      "gross_value_cents": 6500000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     },
+     {
+      "name": "Community brokerage account passing to spouse",
+      "kind": "personal",
+      "gross_value_cents": 40000000,
+      "encumbrances_cents": 0,
+      "treatment": "spouse_passage",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "Surviving spouse, two open routes"
+ },
+ {
+  "name": "needs-info-unknown-value",
+  "blurb": "One counted asset's value is unknown, so the affidavit cap cannot be resolved",
+  "expected_verdict": "INCOMPLETE_INFO",
+  "case": {
+   "death_date": {
+    "year": 2025,
+    "month": 5,
+    "day": 10
+   },
+   "days_since_death": 444,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Credit union share account with unknown balance",
+      "kind": "personal",
+      "gross_value_cents": null,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     },
+     {
+      "name": "Vanguard brokerage account",
+      "kind": "personal",
+      "gross_value_cents": 3000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 1
+  },
+  "title": "An asset with no appraisal yet"
+ },
+ {
+  "name": "needs-info-unknown-death-date",
+  "blurb": "Death date unknown: bands and waiting periods cannot be resolved (not an error)",
+  "expected_verdict": "INCOMPLETE_INFO",
+  "case": {
+   "death_date": null,
+   "days_since_death": 200,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Bank of America checking account",
+      "kind": "personal",
+      "gross_value_cents": 4200000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "Death date not yet known"
+ },
+ {
+  "name": "needs-info-inventory-not-confirmed",
+  "blurb": "Known values are under the cap but the inventory is not confirmed complete",
+  "expected_verdict": "INCOMPLETE_INFO",
+  "case": {
+   "death_date": {
+    "year": 2025,
+    "month": 5,
+    "day": 10
+   },
+   "days_since_death": 444,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": null,
+    "assets": [
+     {
+      "name": "Patelco savings account",
+      "kind": "personal",
+      "gross_value_cents": 9000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     },
+     {
+      "name": "Household furniture and effects",
+      "kind": "personal",
+      "gross_value_cents": 800000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "Inventory not confirmed complete"
+ },
+ {
+  "name": "over-cap-despite-unknowns",
+  "blurb": "Known counted subtotal $240,000 already exceeds the $208,850 cap - violation beats unknowns",
+  "expected_verdict": "OTHER_FORM_REQUIRED",
+  "case": {
+   "death_date": {
+    "year": 2025,
+    "month": 6,
+    "day": 1
+   },
+   "days_since_death": 422,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Citibank savings account",
+      "kind": "personal",
+      "gross_value_cents": 15000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     },
+     {
+      "name": "Vanguard index fund",
+      "kind": "personal",
+      "gross_value_cents": 9000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     },
+     {
+      "name": "Storage unit contents not yet appraised",
+      "kind": "personal",
+      "gross_value_cents": null,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "Clearly over the $208,850 limit"
+ },
+ {
+  "name": "too-soon-20-days",
+  "blurb": "Small personal estate but only 20 days since death - the 40-day wait is not met",
+  "expected_verdict": "OTHER_FORM_REQUIRED",
+  "case": {
+   "death_date": {
+    "year": 2026,
+    "month": 7,
+    "day": 8
+   },
+   "days_since_death": 20,
+   "six_months_elapsed": false,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": false,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Chase checking account",
+      "kind": "personal",
+      "gross_value_cents": 1000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "Only 20 days since the death"
+ },
+ {
+  "name": "eligible-primary-residence",
+  "blurb": "A $600,000 Sacramento primary residence fits the DE-310 petition under the AB 2016 $750,000 cap",
+  "expected_verdict": "ELIGIBLE",
+  "case": {
+   "death_date": {
+    "year": 2025,
+    "month": 6,
+    "day": 15
+   },
+   "days_since_death": 408,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Sacramento primary residence",
+      "kind": "california_real",
+      "gross_value_cents": 60000000,
+      "encumbrances_cents": 25000000,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": true,
+      "is_primary_residence": true
+     },
+     {
+      "name": "Golden 1 checking account",
+      "kind": "personal",
+      "gross_value_cents": 2000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "The $600,000 family home"
+ },
+ {
+  "name": "eligible-small-value-real-property",
+  "blurb": "A $55,000 desert lot fits the DE-305 affidavit: six months elapsed and debts paid",
+  "expected_verdict": "ELIGIBLE",
+  "case": {
+   "death_date": {
+    "year": 2025,
+    "month": 9,
+    "day": 1
+   },
+   "days_since_death": 330,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Vacant desert lot near Barstow",
+      "kind": "california_real",
+      "gross_value_cents": 5500000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     },
+     {
+      "name": "US Bank savings account",
+      "kind": "personal",
+      "gross_value_cents": 4000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "A small $55,000 desert lot"
+ },
+ {
+  "name": "pre-2022-death-over-old-cap",
+  "blurb": "Death in 2021: $175,000 exceeds the old $166,250 limit even though it is under today's",
+  "expected_verdict": "OTHER_FORM_REQUIRED",
+  "case": {
+   "death_date": {
+    "year": 2021,
+    "month": 10,
+    "day": 1
+   },
+   "days_since_death": 1761,
+   "six_months_elapsed": true,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "First Republic savings account",
+      "kind": "personal",
+      "gross_value_cents": 17500000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "A 2021 death under the older limit"
+ },
+ {
+  "name": "error-after-snapshot",
+  "blurb": "Death date 2027-03-01 is past the model's 2026-12-31 snapshot - returns an error, not a verdict",
+  "expected_verdict": "ERROR",
+  "case": {
+   "death_date": {
+    "year": 2027,
+    "month": 3,
+    "day": 1
+   },
+   "days_since_death": 100,
+   "six_months_elapsed": false,
+   "claimant_is_successor": true,
+   "no_superior_right": true,
+   "funeral_last_illness_and_unsecured_debts_paid": true,
+   "authority": "no_proceeding",
+   "survivor_status": "none",
+   "property_passes_to_survivor": false,
+   "property_belongs_to_survivor": false,
+   "estate": {
+    "inventory_complete": true,
+    "assets": [
+     {
+      "name": "Wells Fargo checking account",
+      "kind": "personal",
+      "gross_value_cents": 3000000,
+      "encumbrances_cents": 0,
+      "treatment": "counted",
+      "included_in_primary_residence_petition": false,
+      "is_primary_residence": false
+     }
+    ]
+   },
+   "target_index": 0
+  },
+  "title": "A death date beyond 2026"
+ }
+]
