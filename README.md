@@ -1,4 +1,6 @@
-# California Simple Transfer — Lean 4
+# AlixHack
+
+## California Simple Transfer — Lean 4
 
 This project formalizes the California Courts simple-transfer probate decision
 process using law and official guidance available on July 28, 2026. It supports
