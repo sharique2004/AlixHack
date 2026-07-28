@@ -2,6 +2,7 @@ import SimpleProbate.Date
 import SimpleProbate.Thresholds
 import SimpleProbate.Estate
 import SimpleProbate.Eligibility
+import SimpleProbate.Procedure
 
 namespace SimpleProbate.Examples
 
@@ -211,5 +212,159 @@ example :
 
 example :
     candidateRoutes invalidDateCase = .error .invalidDate := by decide
+
+def baseProcedureContext : ProcedureContext := {
+  claimsUnderWill := false
+  ownershipEvidenceAvailable := true
+  hasOtherEntitledSuccessors := false
+  knownGuardianOrConservator := false
+  institutionRequiresNotary := false
+  propertyAgreementExists := false
+}
+
+def completePersonalPacket : PersonalAffidavitPacket := {
+  affidavitDeclarations := true
+  certifiedDeathCertificate := true
+  identityProof := true
+  ownershipEvidencePresented := true
+  holderIndemnityAlternative := false
+  allEntitledSuccessorsSigned := true
+  notarized := false
+  consentAndLettersAttached := true
+  datedAmountListAttached := true
+  inventoryAndAppraisalAttached := true
+  presentedToHolder := true
+}
+
+example :
+    PersonalAffidavitReady baseProcedureContext base2026Case
+      completePersonalPacket := by decide
+
+example :
+    ¬PersonalAffidavitReady baseProcedureContext base2026Case
+      { completePersonalPacket with certifiedDeathCertificate := false } := by decide
+
+example :
+    .certifiedDeathCertificate ∈
+      personalAffidavitMissing baseProcedureContext base2026Case
+        { completePersonalPacket with certifiedDeathCertificate := false } := by decide
+
+example :
+    PersonalAffidavitReady
+      { baseProcedureContext with institutionRequiresNotary := false }
+      base2026Case
+      { completePersonalPacket with notarized := false } := by decide
+
+example :
+    ¬PersonalAffidavitReady
+      { baseProcedureContext with institutionRequiresNotary := true }
+      base2026Case
+      { completePersonalPacket with notarized := false } := by decide
+
+example :
+    workflowFor .smallValueRealPropertyAffidavit = [
+      .assessEligibility,
+      .waitForStatutoryPeriod,
+      .gatherEvidence,
+      .obtainProbateRefereeAppraisal,
+      .prepareAffidavit,
+      .notarize,
+      .fileWithCourt,
+      .obtainCertifiedCopy,
+      .recordWithCounty
+    ] := by decide
+
+example :
+    personalAffidavitMissing baseProcedureContext base2026Case
+      completePersonalPacket = [] := by decide
+
+example :
+    PersonalAffidavitReady baseProcedureContext base2026Case
+      completePersonalPacket := by decide
+
+def smallReal2026Case : TransferCase := {
+  base2026Case with
+  estate := { assets := [smallRealTarget] }
+  target := smallRealTarget
+  sixMonthsElapsed := true
+}
+
+def completeSmallRealPacket : SmallRealPropertyPacket := {
+  de305Statements := true
+  notarizedAcknowledgments := true
+  inventoryAndAppraisalAttached := true
+  certifiedDeathCertificate := true
+  willAttached := true
+  consentAndLettersAttached := true
+  datedAmountListAttached := true
+  guardianOrConservatorDelivery := true
+  filedInProperCourt := true
+  clerkCertifiedCopyIssued := true
+  recordedInPropertyCounty := true
+}
+
+example :
+    smallRealPropertyAffidavitMissing baseProcedureContext smallReal2026Case
+      completeSmallRealPacket = [] := by decide
+
+example :
+    SmallRealPropertyAffidavitReady baseProcedureContext smallReal2026Case
+      completeSmallRealPacket := by decide
+
+def primaryResidence2026Case : TransferCase := {
+  base2026Case with
+  estate := { assets := [primaryResidenceTarget] }
+  target := primaryResidenceTarget
+}
+
+def completePrimaryResidencePacket : PrimaryResidencePetitionPacket := {
+  de310VerifiedStatements := true
+  inventoryAndAppraisalAttached := true
+  willAttached := true
+  consentAttached := true
+  datedAmountListAttached := true
+  filedInProperCourt := true
+  heirAndDeviseeCopyWithinFiveBusinessDays := true
+  statutoryHearingNotice := true
+  courtFindingsMade := true
+  de315OrderIssued := true
+}
+
+example :
+    primaryResidencePetitionMissing baseProcedureContext
+      primaryResidence2026Case completePrimaryResidencePacket = [] := by decide
+
+example :
+    PrimaryResidencePetitionReady baseProcedureContext primaryResidence2026Case
+      completePrimaryResidencePacket := by decide
+
+def spouse2026Case : TransferCase := {
+  base2026Case with
+  estate := { assets := [] }
+  targetIsPartOfEstate := false
+  claimantIsSuccessor := false
+  noSuperiorRight := false
+  survivorStatus := .spouse
+  propertyPassesToSurvivor := true
+}
+
+def completeSpousalPacket : SpousalPetitionPacket := {
+  de221Allegations := true
+  propertyDescriptionsAndSupportingFacts := true
+  knownInterestedPersonsListed := true
+  propertyAgreementDisclosed := true
+  willAttached := true
+  propertyAgreementAttached := true
+  statutoryHearingNotice := true
+  de226OrderIssued := true
+}
+
+example :
+    spousalPetitionMissing baseProcedureContext spouse2026Case
+      completeSpousalPacket = [] := by decide
+
+example :
+    SpousalPetitionReady baseProcedureContext spouse2026Case
+      completeSpousalPacket := by decide
 
 end SimpleProbate.Examples
