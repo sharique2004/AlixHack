@@ -50,8 +50,12 @@ export interface AssetInput {
   /** Required, unique within the list. */
   name: string;
   kind?: AssetKind | null;
-  /** Integer cents. */
+  /** Backward-compatible fallback for both exact value fields, in integer cents. */
   gross_value_cents?: number | null;
+  /** Current gross value in integer cents; overrides legacy gross_value_cents. */
+  current_gross_value_cents?: number | null;
+  /** Date-of-death gross value in integer cents; overrides legacy gross_value_cents. */
+  date_of_death_value_cents?: number | null;
   /** Integer cents; never reduces eligibility values. */
   encumbrances_cents?: number | null;
   treatment?: ValuationTreatment | null;

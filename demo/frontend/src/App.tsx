@@ -50,12 +50,17 @@ async function post(path: string, body: CaseInput): Promise<CheckResult> {
 
 function targetValueCents(c: CaseInput): number | null {
   const assets = c.estate?.assets ?? [];
-  return assets[c.target_index]?.gross_value_cents ?? null;
+  const asset = assets[c.target_index];
+  return asset?.current_gross_value_cents ?? asset?.gross_value_cents ?? null;
 }
 
 function withTargetValue(c: CaseInput, cents: number): CaseInput {
   const assets = (c.estate?.assets ?? []).map((a, i) =>
-    i === c.target_index ? { ...a, gross_value_cents: cents } : a,
+    i === c.target_index
+      ? a.current_gross_value_cents != null
+        ? { ...a, current_gross_value_cents: cents }
+        : { ...a, gross_value_cents: cents }
+      : a,
   );
   return { ...c, estate: { ...(c.estate ?? {}), assets } };
 }
