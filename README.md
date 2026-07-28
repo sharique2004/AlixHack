@@ -105,8 +105,8 @@ those outcomes distinct in its readiness assessment.
 
 For the small-real-property packet, this model encodes the §13200(d) will
 attachment rule as applicable only when `claimsUnderWill` is true and authority
-is `.noProceeding`. Written personal-representative consent and blocked or
-proceeding authority therefore do not require that attachment in the model.
+is `.noProceeding`. Written personal-representative consent or
+`.blockedByProceeding` does not trigger that attachment in the model.
 
 ### Proof contracts
 
@@ -118,7 +118,7 @@ total-case validation and gives exact fallback semantics. For partial cases,
 `assessRoute_qualifies_all_completions` proves that a qualifying route remains
 eligible in every well-formed completion, while
 `assessRoute_disqualified_no_completion` proves that a disqualified route has
-no eligible completion.  Packet contracts are
+no eligible well-formed completion. Packet contracts are
 `assessPacket_ofTotal_ready_iff` (readiness iff for every `CourtRoute`) and
 `assessPacket_ready_all_completions` (partial readiness sound when the context,
 case, and route-indexed packet each satisfy their completion relation and the
