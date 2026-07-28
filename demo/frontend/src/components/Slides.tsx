@@ -65,14 +65,16 @@ export function Slides({ onClose }: SlidesProps) {
       <div className="slide" onClick={next}>
         {i === 0 && (
           <div className="slide-body">
-            <span className="slide-kicker">California probate · Small estates</span>
+            <span className="slide-kicker">This demo · one small problem, on purpose</span>
             <h2>
-              One legal question.
+              Is this estate eligible for
               <br />
-              Two ways to answer it.
+              California's simple transfer?
             </h2>
             <p className="slide-lead">
-              Can this family skip probate? We built both answers to compare them live:
+              That's the entire scope — one narrow eligibility check under California
+              probate law. Small enough to build the answer both ways and compare them
+              honestly:
             </p>
             <ul className="slide-points">
               <li>
@@ -80,7 +82,7 @@ export function Slides({ onClose }: SlidesProps) {
                 single case
               </li>
               <li>
-                <strong>Run the compiled law</strong> — the statute written once into
+                <strong>Run the compiled law</strong> — the same statute written once into
                 proof-checked Lean 4 code
               </li>
             </ul>
