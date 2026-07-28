@@ -130,7 +130,7 @@ def simplifiedRoutes : List SimplifiedRoute :=
 theorem simplifiedRoutes_nodup : simplifiedRoutes.Nodup := by
   decide
 
-def overallOutcome (reports : List RouteReport) : OverallOutcome :=
+private def overallOutcome (reports : List RouteReport) : OverallOutcome :=
   if reports.any (fun report =>
       match report.status with
       | .qualifies => true

@@ -1378,6 +1378,32 @@ def theoremEmploymentAsset (id : Nat) (value : Money) : Asset := {
   treatment := .employmentCompensation
 }
 
+theorem aggregateEmploymentExclusion_le_limit
+    (estate : Estate) (thresholds : Thresholds) :
+    min estate.aggregateEmploymentCompensation
+        thresholds.employmentCompensationExclusion ≤
+      thresholds.employmentCompensationExclusion :=
+  Nat.min_le_right _ _
+
+theorem personalContributions_for_treatment
+    (asset : Asset) (treatment : ValuationTreatment) :
+    let treated := { asset with treatment := treatment }
+    (treated.personalOrdinaryValue,
+        treated.qualifyingEmploymentCompensation) =
+      if treated.kind == .outsideCaliforniaReal ||
+          treated.includedInPrimaryResidencePetition then
+        (0, 0)
+      else
+        match treatment with
+        | .counted => (treated.currentGrossValue, 0)
+        | .employmentCompensation => (0, treated.currentGrossValue)
+        | _ => (0, 0) := by
+  cases asset with
+  | mk id name kind current death encumbrances existing included primary =>
+      cases kind <;> cases included <;> cases treatment <;>
+        simp [Asset.personalOrdinaryValue,
+          Asset.qualifyingEmploymentCompensation]
+
 theorem aggregateEmployment_split_invariant
     (thresholds : Thresholds) (left right : Money) :
     ({ assets := [
@@ -1393,6 +1419,18 @@ theorem aggregateEmployment_split_invariant
     Asset.qualifyingEmploymentCompensation,
     theoremEmploymentAsset]
 
+theorem militaryCompensation_personalAffidavitValueWith_unchanged
+    (estate : Estate) (thresholds : Thresholds) (asset : Asset)
+    (military : asset.treatment = .militaryCompensation) :
+    ({ assets := asset :: estate.assets } : Estate).personalAffidavitValueWith
+        thresholds =
+      estate.personalAffidavitValueWith thresholds := by
+  simp [Estate.personalAffidavitValueWith,
+    Estate.aggregateEmploymentCompensation,
+    Asset.personalOrdinaryValue,
+    Asset.qualifyingEmploymentCompensation,
+    military]
+
 theorem personalAffidavitValueWith_ignores_encumbrances
     (estate : Estate) (thresholds : Thresholds) (asset : Asset) :
     ({ assets := asset :: estate.assets } : Estate).personalAffidavitValueWith
@@ -1403,5 +1441,21 @@ theorem personalAffidavitValueWith_ignores_encumbrances
     Estate.aggregateEmploymentCompensation,
     Asset.personalOrdinaryValue,
     Asset.qualifyingEmploymentCompensation]
+
+theorem smallValueRealPropertyValue_ignores_encumbrances
+    (estate : Estate) (asset : Asset) :
+    ({ assets := asset :: estate.assets } : Estate).smallValueRealPropertyValue =
+      ({ assets := { asset with encumbrances := 0 } :: estate.assets } :
+        Estate).smallValueRealPropertyValue := by
+  simp [Estate.smallValueRealPropertyValue,
+    Asset.countedCaliforniaRealValue]
+
+theorem primaryResidenceValue_ignores_encumbrances
+    (estate : Estate) (asset : Asset) :
+    ({ assets := asset :: estate.assets } : Estate).primaryResidenceValue =
+      ({ assets := { asset with encumbrances := 0 } :: estate.assets } :
+        Estate).primaryResidenceValue := by
+  simp [Estate.primaryResidenceValue,
+    Asset.countedPrimaryResidenceValue]
 
 end SimpleProbate

@@ -4,6 +4,11 @@ import SimpleProbate.Estate
 import SimpleProbate.Eligibility
 import SimpleProbate.Procedure
 import SimpleProbate.Examples.Fixtures
+import SimpleProbate.Examples.Decision
+import SimpleProbate.Examples.Valuation
+import SimpleProbate.Examples.Case
+import SimpleProbate.Examples.EligibilityAssessment
+import SimpleProbate.Examples.ProcedureExactness
 import SimpleProbate.Examples.ProcedureAssessment
 
 namespace SimpleProbate.Examples

@@ -75,6 +75,15 @@ example :
     }) := by decide
 ```
 
+### Compatibility migration
+
+`RouteEligible` now takes a `SimplifiedRoute`; callers that still need the old
+`Route`-shaped predicate can use `LegacyRouteEligible`, with
+`legacyRouteEligible_toRoute_iff` bridging non-fallback routes. The checked
+`candidateRoutes` and `routeEligible` helpers now return `Except CaseError`
+rather than `Except DateError`. The former one-way `candidateRoutes_sound`
+contract is replaced by the membership equivalence `candidateRoutes_exact`.
+
 ### Valuation and errors
 
 `PartialAsset` carries separate `currentGrossValue` and `dateOfDeathValue`
@@ -142,7 +151,7 @@ The spousal property petition has no value cap in this model.
 | Lean definition | Official source |
 | --- | --- |
 | `thresholdsFor`, `thresholdsForBand` | Probate Code §890 and Judicial Council form DE-300 |
-| `Asset.personalAffidavitValue` | Probate Code §§13050 and 13100 |
+| `Estate.personalAffidavitValue` | Probate Code §§13050 and 13100 |
 | `PersonalPropertyAffidavitEligible` | Probate Code §§13100–13101 |
 | `SmallValueRealPropertyAffidavitEligible` | Probate Code §13200 and form DE-305 |
 | `PrimaryResidencePetitionEligible` | Probate Code §§13150–13154 and forms DE-310/DE-315 |
