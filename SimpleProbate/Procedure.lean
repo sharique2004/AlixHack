@@ -63,6 +63,26 @@ structure SpousalPetitionPacket where
   de226OrderIssued : Bool
 deriving DecidableEq, Repr
 
+inductive CourtRoute
+  | personalPropertyAffidavit
+  | smallValueRealPropertyAffidavit
+  | primaryResidencePetition
+  | spousalPropertyPetition
+deriving BEq, ReflBEq, LawfulBEq, DecidableEq, Repr
+
+def CourtRoute.toSimplifiedRoute : CourtRoute → SimplifiedRoute
+  | .personalPropertyAffidavit => .personalPropertyAffidavit
+  | .smallValueRealPropertyAffidavit =>
+      .smallValueRealPropertyAffidavit
+  | .primaryResidencePetition => .primaryResidencePetition
+  | .spousalPropertyPetition => .spousalPropertyPetition
+
+def TotalPacket : CourtRoute → Type
+  | .personalPropertyAffidavit => PersonalAffidavitPacket
+  | .smallValueRealPropertyAffidavit => SmallRealPropertyPacket
+  | .primaryResidencePetition => PrimaryResidencePetitionPacket
+  | .spousalPropertyPetition => SpousalPetitionPacket
+
 def suppliedWhen (required supplied : Bool) : Prop :=
   required = false ∨ supplied = true
 
@@ -74,6 +94,13 @@ def needsDatedAmountList (date : CivilDate) : Bool :=
 
 def needsConsentAttachment (authority : SummaryAuthority) : Bool :=
   authority == .writtenPersonalRepresentativeConsent
+
+def noEstateProceeding (authority : SummaryAuthority) : Bool :=
+  authority == .noProceeding
+
+def needsSmallRealWillAttachment
+    (context : ProcedureContext) (case : TransferCase) : Bool :=
+  context.claimsUnderWill && noEstateProceeding case.authority
 
 def PersonalAffidavitReady
     (context : ProcedureContext) (case : TransferCase)
@@ -111,7 +138,8 @@ def SmallRealPropertyAffidavitReady
   packet.notarizedAcknowledgments = true ∧
   packet.inventoryAndAppraisalAttached = true ∧
   packet.certifiedDeathCertificate = true ∧
-  suppliedWhen context.claimsUnderWill packet.willAttached ∧
+  suppliedWhen (needsSmallRealWillAttachment context case)
+    packet.willAttached ∧
   suppliedWhen (needsConsentAttachment case.authority)
     packet.consentAndLettersAttached ∧
   suppliedWhen (needsDatedAmountList case.deathDate)
@@ -174,6 +202,19 @@ instance
   unfold SpousalPetitionReady suppliedWhen
   infer_instance
 
+def CourtReady
+    (route : CourtRoute) (context : ProcedureContext)
+    (case : TransferCase) (packet : TotalPacket route) : Prop :=
+  match route with
+  | .personalPropertyAffidavit =>
+      PersonalAffidavitReady context case packet
+  | .smallValueRealPropertyAffidavit =>
+      SmallRealPropertyAffidavitReady context case packet
+  | .primaryResidencePetition =>
+      PrimaryResidencePetitionReady context case packet
+  | .spousalPropertyPetition =>
+      SpousalPetitionReady context case packet
+
 inductive Requirement
   | eligibleRoute
   | affidavitDeclarations
@@ -205,116 +246,238 @@ inductive Requirement
   | de226Order
 deriving BEq, ReflBEq, LawfulBEq, DecidableEq, Repr
 
-def suppliedWhenBool (required supplied : Bool) : Bool :=
-  !required || supplied
+structure RequirementCheck where
+  requirement : Requirement
+  applies : Bool
+  supplied : Bool
+deriving DecidableEq, Repr
 
-def missingUnless (satisfied : Bool) (requirement : Requirement) :
-    List Requirement :=
-  if satisfied then [] else [requirement]
+def RequirementCheck.isMissing (check : RequirementCheck) : Bool :=
+  check.applies && !check.supplied
+
+def missingFromChecks
+    (checks : List RequirementCheck) : List Requirement :=
+  checks.filterMap fun check =>
+    if check.isMissing then some check.requirement else none
+
+def personalRequirementChecks
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : PersonalAffidavitPacket) : List RequirementCheck := [
+  ⟨.eligibleRoute, true,
+    decide (PersonalPropertyAffidavitEligible case)⟩,
+  ⟨.affidavitDeclarations, true, packet.affidavitDeclarations⟩,
+  ⟨.certifiedDeathCertificate, true, packet.certifiedDeathCertificate⟩,
+  ⟨.identityProof, true, packet.identityProof⟩,
+  ⟨.ownershipEvidenceOrIndemnity, true,
+    if context.ownershipEvidenceAvailable
+    then packet.ownershipEvidencePresented
+    else packet.holderIndemnityAlternative⟩,
+  ⟨.allEntitledSuccessorsSigned, context.hasOtherEntitledSuccessors,
+    packet.allEntitledSuccessorsSigned⟩,
+  ⟨.notarization, context.institutionRequiresNotary, packet.notarized⟩,
+  ⟨.consentAndLetters, needsConsentAttachment case.authority,
+    packet.consentAndLettersAttached⟩,
+  ⟨.datedAmountList, needsDatedAmountList case.deathDate,
+    packet.datedAmountListAttached⟩,
+  ⟨.inventoryAndAppraisal,
+    case.estate.containsCountedCaliforniaRealProperty,
+    packet.inventoryAndAppraisalAttached⟩,
+  ⟨.presentationToHolder, true, packet.presentedToHolder⟩
+]
+
+def smallRealPropertyRequirementChecks
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : SmallRealPropertyPacket) : List RequirementCheck := [
+  ⟨.eligibleRoute, true,
+    decide (SmallValueRealPropertyAffidavitEligible case)⟩,
+  ⟨.de305Statements, true, packet.de305Statements⟩,
+  ⟨.notarization, true, packet.notarizedAcknowledgments⟩,
+  ⟨.inventoryAndAppraisal, true, packet.inventoryAndAppraisalAttached⟩,
+  ⟨.certifiedDeathCertificate, true, packet.certifiedDeathCertificate⟩,
+  ⟨.willAttachment, needsSmallRealWillAttachment context case,
+    packet.willAttached⟩,
+  ⟨.consentAndLetters, needsConsentAttachment case.authority,
+    packet.consentAndLettersAttached⟩,
+  ⟨.datedAmountList, needsDatedAmountList case.deathDate,
+    packet.datedAmountListAttached⟩,
+  ⟨.guardianOrConservatorDelivery, context.knownGuardianOrConservator,
+    packet.guardianOrConservatorDelivery⟩,
+  ⟨.properCourtFiling, true, packet.filedInProperCourt⟩,
+  ⟨.clerkCertifiedCopy, true, packet.clerkCertifiedCopyIssued⟩,
+  ⟨.countyRecording, true, packet.recordedInPropertyCounty⟩
+]
+
+def primaryResidenceRequirementChecks
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : PrimaryResidencePetitionPacket) : List RequirementCheck := [
+  ⟨.eligibleRoute, true,
+    decide (PrimaryResidencePetitionEligible case)⟩,
+  ⟨.de310VerifiedStatements, true, packet.de310VerifiedStatements⟩,
+  ⟨.inventoryAndAppraisal, true, packet.inventoryAndAppraisalAttached⟩,
+  ⟨.willAttachment, context.claimsUnderWill, packet.willAttached⟩,
+  ⟨.consentAndLetters, needsConsentAttachment case.authority,
+    packet.consentAttached⟩,
+  ⟨.datedAmountList, needsDatedAmountList case.deathDate,
+    packet.datedAmountListAttached⟩,
+  ⟨.properCourtFiling, true, packet.filedInProperCourt⟩,
+  ⟨.heirAndDeviseeCopyWithinFiveBusinessDays, true,
+    packet.heirAndDeviseeCopyWithinFiveBusinessDays⟩,
+  ⟨.statutoryHearingNotice, true, packet.statutoryHearingNotice⟩,
+  ⟨.courtFindings, true, packet.courtFindingsMade⟩,
+  ⟨.de315Order, true, packet.de315OrderIssued⟩
+]
+
+def spousalRequirementChecks
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : SpousalPetitionPacket) : List RequirementCheck := [
+  ⟨.eligibleRoute, true,
+    decide (SpousalPropertyPetitionEligible case)⟩,
+  ⟨.de221Allegations, true, packet.de221Allegations⟩,
+  ⟨.propertyDescriptionsAndSupportingFacts, true,
+    packet.propertyDescriptionsAndSupportingFacts⟩,
+  ⟨.knownInterestedPersons, true, packet.knownInterestedPersonsListed⟩,
+  ⟨.propertyAgreementDisclosure, true, packet.propertyAgreementDisclosed⟩,
+  ⟨.willAttachment, context.claimsUnderWill, packet.willAttached⟩,
+  ⟨.propertyAgreementAttachment, context.propertyAgreementExists,
+    packet.propertyAgreementAttached⟩,
+  ⟨.statutoryHearingNotice, true, packet.statutoryHearingNotice⟩,
+  ⟨.de226Order, true, packet.de226OrderIssued⟩
+]
 
 def personalAffidavitMissing
     (context : ProcedureContext) (case : TransferCase)
     (packet : PersonalAffidavitPacket) : List Requirement :=
-  missingUnless (decide (PersonalPropertyAffidavitEligible case)) .eligibleRoute ++
-  missingUnless packet.affidavitDeclarations .affidavitDeclarations ++
-  missingUnless packet.certifiedDeathCertificate .certifiedDeathCertificate ++
-  missingUnless packet.identityProof .identityProof ++
-  missingUnless
-    (if context.ownershipEvidenceAvailable
-      then packet.ownershipEvidencePresented
-      else packet.holderIndemnityAlternative)
-    .ownershipEvidenceOrIndemnity ++
-  missingUnless
-    (suppliedWhenBool context.hasOtherEntitledSuccessors
-      packet.allEntitledSuccessorsSigned)
-    .allEntitledSuccessorsSigned ++
-  missingUnless
-    (suppliedWhenBool context.institutionRequiresNotary packet.notarized)
-    .notarization ++
-  missingUnless
-    (suppliedWhenBool (needsConsentAttachment case.authority)
-      packet.consentAndLettersAttached)
-    .consentAndLetters ++
-  missingUnless
-    (suppliedWhenBool (needsDatedAmountList case.deathDate)
-      packet.datedAmountListAttached)
-    .datedAmountList ++
-  missingUnless
-    (suppliedWhenBool case.estate.containsCountedCaliforniaRealProperty
-      packet.inventoryAndAppraisalAttached)
-    .inventoryAndAppraisal ++
-  missingUnless packet.presentedToHolder .presentationToHolder
+  missingFromChecks (personalRequirementChecks context case packet)
 
 def smallRealPropertyAffidavitMissing
     (context : ProcedureContext) (case : TransferCase)
     (packet : SmallRealPropertyPacket) : List Requirement :=
-  missingUnless
-    (decide (SmallValueRealPropertyAffidavitEligible case)) .eligibleRoute ++
-  missingUnless packet.de305Statements .de305Statements ++
-  missingUnless packet.notarizedAcknowledgments .notarization ++
-  missingUnless packet.inventoryAndAppraisalAttached .inventoryAndAppraisal ++
-  missingUnless packet.certifiedDeathCertificate .certifiedDeathCertificate ++
-  missingUnless
-    (suppliedWhenBool context.claimsUnderWill packet.willAttached)
-    .willAttachment ++
-  missingUnless
-    (suppliedWhenBool (needsConsentAttachment case.authority)
-      packet.consentAndLettersAttached)
-    .consentAndLetters ++
-  missingUnless
-    (suppliedWhenBool (needsDatedAmountList case.deathDate)
-      packet.datedAmountListAttached)
-    .datedAmountList ++
-  missingUnless
-    (suppliedWhenBool context.knownGuardianOrConservator
-      packet.guardianOrConservatorDelivery)
-    .guardianOrConservatorDelivery ++
-  missingUnless packet.filedInProperCourt .properCourtFiling ++
-  missingUnless packet.clerkCertifiedCopyIssued .clerkCertifiedCopy ++
-  missingUnless packet.recordedInPropertyCounty .countyRecording
+  missingFromChecks
+    (smallRealPropertyRequirementChecks context case packet)
 
 def primaryResidencePetitionMissing
     (context : ProcedureContext) (case : TransferCase)
     (packet : PrimaryResidencePetitionPacket) : List Requirement :=
-  missingUnless (decide (PrimaryResidencePetitionEligible case)) .eligibleRoute ++
-  missingUnless packet.de310VerifiedStatements .de310VerifiedStatements ++
-  missingUnless packet.inventoryAndAppraisalAttached .inventoryAndAppraisal ++
-  missingUnless
-    (suppliedWhenBool context.claimsUnderWill packet.willAttached)
-    .willAttachment ++
-  missingUnless
-    (suppliedWhenBool (needsConsentAttachment case.authority)
-      packet.consentAttached)
-    .consentAndLetters ++
-  missingUnless
-    (suppliedWhenBool (needsDatedAmountList case.deathDate)
-      packet.datedAmountListAttached)
-    .datedAmountList ++
-  missingUnless packet.filedInProperCourt .properCourtFiling ++
-  missingUnless packet.heirAndDeviseeCopyWithinFiveBusinessDays
-    .heirAndDeviseeCopyWithinFiveBusinessDays ++
-  missingUnless packet.statutoryHearingNotice .statutoryHearingNotice ++
-  missingUnless packet.courtFindingsMade .courtFindings ++
-  missingUnless packet.de315OrderIssued .de315Order
+  missingFromChecks
+    (primaryResidenceRequirementChecks context case packet)
 
 def spousalPetitionMissing
     (context : ProcedureContext) (case : TransferCase)
     (packet : SpousalPetitionPacket) : List Requirement :=
-  missingUnless (decide (SpousalPropertyPetitionEligible case)) .eligibleRoute ++
-  missingUnless packet.de221Allegations .de221Allegations ++
-  missingUnless packet.propertyDescriptionsAndSupportingFacts
-    .propertyDescriptionsAndSupportingFacts ++
-  missingUnless packet.knownInterestedPersonsListed .knownInterestedPersons ++
-  missingUnless packet.propertyAgreementDisclosed .propertyAgreementDisclosure ++
-  missingUnless
-    (suppliedWhenBool context.claimsUnderWill packet.willAttached)
-    .willAttachment ++
-  missingUnless
-    (suppliedWhenBool context.propertyAgreementExists
-      packet.propertyAgreementAttached)
-    .propertyAgreementAttachment ++
-  missingUnless packet.statutoryHearingNotice .statutoryHearingNotice ++
-  missingUnless packet.de226OrderIssued .de226Order
+  missingFromChecks (spousalRequirementChecks context case packet)
+
+theorem mem_missingFromChecks_iff
+    (checks : List RequirementCheck) (requirement : Requirement) :
+    requirement ∈ missingFromChecks checks ↔
+      ∃ check ∈ checks,
+        check.requirement = requirement ∧
+        check.applies = true ∧
+        check.supplied = false := by
+  induction checks with
+  | nil => simp [missingFromChecks]
+  | cons check rest ih =>
+      cases applies : check.applies <;>
+      cases supplied : check.supplied <;>
+      simp_all [missingFromChecks, RequirementCheck.isMissing]
+      exact or_congr eq_comm Iff.rfl
+
+theorem mem_personalAffidavitMissing_iff
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : PersonalAffidavitPacket) (requirement : Requirement) :
+    requirement ∈ personalAffidavitMissing context case packet ↔
+      ∃ check ∈ personalRequirementChecks context case packet,
+        check.requirement = requirement ∧
+        check.applies = true ∧
+        check.supplied = false := by
+  exact mem_missingFromChecks_iff
+    (personalRequirementChecks context case packet) requirement
+
+theorem mem_smallRealPropertyAffidavitMissing_iff
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : SmallRealPropertyPacket) (requirement : Requirement) :
+    requirement ∈ smallRealPropertyAffidavitMissing context case packet ↔
+      ∃ check ∈ smallRealPropertyRequirementChecks context case packet,
+        check.requirement = requirement ∧
+        check.applies = true ∧
+        check.supplied = false := by
+  exact mem_missingFromChecks_iff
+    (smallRealPropertyRequirementChecks context case packet) requirement
+
+theorem mem_primaryResidencePetitionMissing_iff
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : PrimaryResidencePetitionPacket) (requirement : Requirement) :
+    requirement ∈ primaryResidencePetitionMissing context case packet ↔
+      ∃ check ∈ primaryResidenceRequirementChecks context case packet,
+        check.requirement = requirement ∧
+        check.applies = true ∧
+        check.supplied = false := by
+  exact mem_missingFromChecks_iff
+    (primaryResidenceRequirementChecks context case packet) requirement
+
+theorem mem_spousalPetitionMissing_iff
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : SpousalPetitionPacket) (requirement : Requirement) :
+    requirement ∈ spousalPetitionMissing context case packet ↔
+      ∃ check ∈ spousalRequirementChecks context case packet,
+        check.requirement = requirement ∧
+        check.applies = true ∧
+        check.supplied = false := by
+  exact mem_missingFromChecks_iff
+    (spousalRequirementChecks context case packet) requirement
+
+theorem personalAffidavitMissing_empty_iff_ready
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : PersonalAffidavitPacket) :
+    personalAffidavitMissing context case packet = [] ↔
+      PersonalAffidavitReady context case packet := by
+  cases successors : context.hasOtherEntitledSuccessors <;>
+  cases notary : context.institutionRequiresNotary <;>
+  cases consent : needsConsentAttachment case.authority <;>
+  cases dated : needsDatedAmountList case.deathDate <;>
+  cases inventory :
+      case.estate.containsCountedCaliforniaRealProperty <;>
+  simp [personalAffidavitMissing, personalRequirementChecks,
+    missingFromChecks, RequirementCheck.isMissing,
+    PersonalAffidavitReady, suppliedWhen, successors, notary,
+    consent, dated, inventory]
+
+theorem smallRealPropertyAffidavitMissing_empty_iff_ready
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : SmallRealPropertyPacket) :
+    smallRealPropertyAffidavitMissing context case packet = [] ↔
+      SmallRealPropertyAffidavitReady context case packet := by
+  cases will : needsSmallRealWillAttachment context case <;>
+  cases consent : needsConsentAttachment case.authority <;>
+  cases dated : needsDatedAmountList case.deathDate <;>
+  cases guardian : context.knownGuardianOrConservator <;>
+  simp [smallRealPropertyAffidavitMissing,
+    smallRealPropertyRequirementChecks, missingFromChecks,
+    RequirementCheck.isMissing, SmallRealPropertyAffidavitReady,
+    suppliedWhen, will, consent, dated, guardian]
+
+theorem primaryResidencePetitionMissing_empty_iff_ready
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : PrimaryResidencePetitionPacket) :
+    primaryResidencePetitionMissing context case packet = [] ↔
+      PrimaryResidencePetitionReady context case packet := by
+  cases will : context.claimsUnderWill <;>
+  cases consent : needsConsentAttachment case.authority <;>
+  cases dated : needsDatedAmountList case.deathDate <;>
+  simp [primaryResidencePetitionMissing,
+    primaryResidenceRequirementChecks, missingFromChecks,
+    RequirementCheck.isMissing, PrimaryResidencePetitionReady,
+    suppliedWhen, will, consent, dated]
+
+theorem spousalPetitionMissing_empty_iff_ready
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : SpousalPetitionPacket) :
+    spousalPetitionMissing context case packet = [] ↔
+      SpousalPetitionReady context case packet := by
+  cases will : context.claimsUnderWill <;>
+  cases agreement : context.propertyAgreementExists <;>
+  simp [spousalPetitionMissing, spousalRequirementChecks,
+    missingFromChecks, RequirementCheck.isMissing,
+    SpousalPetitionReady, suppliedWhen, will, agreement]
 
 private def checkedMissingRequirements
     (date : CivilDate) (requirements : List Requirement) :
