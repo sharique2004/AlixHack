@@ -69,4 +69,73 @@ example :
           .missingTargetAsset personalCase.targetId
         ]) := by decide
 
+def unknownSuccessorCase : PartialTransferCase := {
+  personalCase.toPartial with
+  claimantIsSuccessor := .unknown
+}
+
+example :
+    assessRoute unknownSuccessorCase .personalPropertyAffidavit =
+      .ok (.needsInformation [.claimantIsSuccessor]) := by decide
+
+def incompleteBelowCap : PartialTransferCase := {
+  personalCase.toPartial with
+  estate := {
+    (PartialEstate.ofTotal personalCase.estate) with
+    inventoryComplete := .known false
+  }
+}
+
+example :
+    assessRoute incompleteBelowCap .personalPropertyAffidavit =
+      .ok (.needsInformation [.inventoryComplete]) := by decide
+
+def knownOverCapAsset : Asset := {
+  personalAsset with
+  currentGrossValue := Money.dollars 208_850 + 1
+}
+
+def incompleteOverCap : PartialTransferCase := {
+  ({ personalCase with
+      estate := { assets := [knownOverCapAsset] } }).toPartial with
+  estate := {
+    (PartialEstate.ofTotal { assets := [knownOverCapAsset] }) with
+    inventoryComplete := .known false
+  }
+}
+
+example :
+    assessRoute incompleteOverCap .personalPropertyAffidavit =
+      .ok (.doesNotQualify [
+        .personalPropertyValueOverCap
+          (Money.dollars 208_850 + 1) (Money.dollars 208_850)
+      ]) := by decide
+
+example :
+    (assessRoutes unknownSuccessorCase).map (·.overall) =
+      .ok .unresolved := by decide
+
+def directAsset : Asset := {
+  personalAsset with
+  treatment := .directBeneficiary
+}
+
+def qualifiedAndUnresolved : PartialTransferCase := {
+  ({ personalCase with
+      estate := { assets := [directAsset] } }).toPartial with
+  claimantIsSuccessor := .unknown
+}
+
+example :
+    assessRoute qualifiedAndUnresolved
+      (.directTransfer .namedBeneficiary) = .ok .qualifies := by decide
+
+example :
+    assessRoute qualifiedAndUnresolved .personalPropertyAffidavit =
+      .ok (.needsInformation [.claimantIsSuccessor]) := by decide
+
+example :
+    (assessRoutes qualifiedAndUnresolved).map (·.overall) =
+      .ok .simplifiedRoutesAvailable := by decide
+
 end SimpleProbate.Examples.EligibilityAssessment

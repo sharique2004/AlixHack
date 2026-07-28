@@ -59,7 +59,7 @@ structure Asset where
   treatment : ValuationTreatment := .counted
   includedInPrimaryResidencePetition : Bool := false
   isPrimaryResidence : Bool := false
-deriving DecidableEq, Repr
+deriving BEq, ReflBEq, LawfulBEq, DecidableEq, Repr
 
 structure PartialAsset where
   id : AssetId
@@ -71,7 +71,7 @@ structure PartialAsset where
   treatment : Knowledge ValuationTreatment
   includedInPrimaryResidencePetition : Knowledge Bool
   isPrimaryResidence : Knowledge Bool
-deriving DecidableEq, Repr
+deriving BEq, ReflBEq, LawfulBEq, DecidableEq, Repr
 
 structure Estate where
   assets : List Asset
@@ -435,6 +435,237 @@ def PartialEstate.primaryResidenceValuation
   estate.valuation lowerBound
     (estate.assets.flatMap PartialAsset.primaryResidenceValuationMissing)
 
+private theorem excludedAmount_mono
+    {left right cap : Money} (le : left ≤ right) :
+    left - min left cap ≤ right - min right cap := by
+  by_cases leftWithin : left ≤ cap
+  · rw [Nat.min_eq_left leftWithin, Nat.sub_self]
+    exact Nat.zero_le _
+  · have capLeLeft : cap ≤ left := Nat.le_of_lt (Nat.lt_of_not_ge leftWithin)
+    have capLeRight : cap ≤ right := Nat.le_trans capLeLeft le
+    rw [Nat.min_eq_right capLeLeft, Nat.min_eq_right capLeRight]
+    exact Nat.sub_le_sub_right le cap
+
+private theorem sum_eq_of_perm {left right : List Money}
+    (permuted : left.Perm right) : left.sum = right.sum := by
+  induction permuted with
+  | nil => rfl
+  | cons head permuted ih => simp [ih]
+  | swap left right tail =>
+      simp [Nat.add_left_comm]
+  | trans first second ihFirst ihSecond => exact ihFirst.trans ihSecond
+
+@[simp] private theorem foldl_add_eq_sum_map
+    (values : List α) (value : α → Money) :
+    values.foldl (fun total item => total + value item) 0 =
+      (values.map value).sum := by
+  rw [List.sum_eq_foldl, List.foldl_map]
+
+private theorem sum_map_le_sum_map_of_unique_matches
+    [BEq β] [LawfulBEq β]
+    {partials : List α} {totals : List β}
+    (partialId : α → AssetId) (totalId : β → AssetId)
+    (partialValue : α → Money) (totalValue : β → Money)
+    (partialUnique : (partials.map partialId).Nodup)
+    (totalUnique : (totals.map totalId).Nodup)
+    (matching :
+      ∀ item ∈ partials,
+        ∃ completed ∈ totals,
+          partialId item = totalId completed ∧
+          partialValue item ≤ totalValue completed) :
+    (partials.map partialValue).sum ≤ (totals.map totalValue).sum := by
+  induction partials generalizing totals with
+  | nil => simp
+  | cons head tail ih =>
+      simp only [List.map_cons, List.nodup_cons] at partialUnique
+      obtain ⟨completed, completedMember, sameId, valueLe⟩ :=
+        matching head (by simp)
+      have tailMatches :
+          ∀ item ∈ tail,
+            ∃ remainder ∈ totals.erase completed,
+              partialId item = totalId remainder ∧
+              partialValue item ≤ totalValue remainder := by
+        intro item itemMember
+        obtain ⟨remainder, remainderMember, remainderId, remainderLe⟩ :=
+          matching item (by simp [itemMember])
+        have different : remainder ≠ completed := by
+          intro equal
+          subst remainder
+          apply partialUnique.1
+          simp only [List.mem_map]
+          exact ⟨item, itemMember, remainderId.trans sameId.symm⟩
+        exact ⟨remainder,
+          (List.mem_erase_of_ne different).2 remainderMember,
+          remainderId, remainderLe⟩
+      have remainderUnique :
+          ((totals.erase completed).map totalId).Nodup := by
+        have permutedIds :=
+          (List.perm_cons_erase completedMember).map totalId
+        exact (permutedIds.nodup totalUnique).tail
+      have tailLe :=
+        ih partialUnique.2 remainderUnique tailMatches
+      have totalSum :
+          (totals.map totalValue).sum =
+            totalValue completed +
+              ((totals.erase completed).map totalValue).sum := by
+        have permuted :=
+          (List.perm_cons_erase completedMember).map totalValue
+        simpa using sum_eq_of_perm permuted
+      rw [totalSum]
+      simpa using Nat.add_le_add valueLe tailLe
+
+private theorem sum_map_eq_sum_map_of_unique_matches
+    [BEq α] [LawfulBEq α] [BEq β] [LawfulBEq β]
+    {partials : List α} {totals : List β}
+    (partialId : α → AssetId) (totalId : β → AssetId)
+    (partialValue : α → Money) (totalValue : β → Money)
+    (partialUnique : (partials.map partialId).Nodup)
+    (totalUnique : (totals.map totalId).Nodup)
+    (forward :
+      ∀ item ∈ partials,
+        ∃ completed ∈ totals,
+          partialId item = totalId completed ∧
+          partialValue item = totalValue completed)
+    (reverse :
+      ∀ completed ∈ totals,
+        ∃ item ∈ partials,
+          totalId completed = partialId item ∧
+          totalValue completed = partialValue item) :
+    (partials.map partialValue).sum = (totals.map totalValue).sum := by
+  apply Nat.le_antisymm
+  · exact sum_map_le_sum_map_of_unique_matches
+      partialId totalId partialValue totalValue
+      partialUnique totalUnique
+      (by
+        intro item itemMember
+        obtain ⟨completed, completedMember, sameId, sameValue⟩ :=
+          forward item itemMember
+        exact ⟨completed, completedMember, sameId, Nat.le_of_eq sameValue⟩)
+  · exact sum_map_le_sum_map_of_unique_matches
+      totalId partialId totalValue partialValue
+      totalUnique partialUnique
+      (by
+        intro completed completedMember
+        obtain ⟨item, itemMember, sameId, sameValue⟩ :=
+          reverse completed completedMember
+        exact ⟨item, itemMember, sameId, Nat.le_of_eq sameValue⟩)
+
+private theorem asset_eq_of_mem_of_id_eq
+    {assets : List Asset} {left right : Asset}
+    (unique : (assets.map (·.id)).Nodup)
+    (leftMember : left ∈ assets) (rightMember : right ∈ assets)
+    (sameId : left.id = right.id) :
+    left = right := by
+  induction assets with
+  | nil => simp at leftMember
+  | cons head tail ih =>
+      simp only [List.map_cons, List.nodup_cons] at unique
+      simp only [List.mem_cons] at leftMember rightMember
+      rcases leftMember with rfl | leftMember
+      · rcases rightMember with rfl | rightMember
+        · rfl
+        · exfalso
+          apply unique.1
+          simp only [List.mem_map]
+          exact ⟨right, rightMember, sameId.symm⟩
+      · rcases rightMember with rfl | rightMember
+        · exfalso
+          apply unique.1
+          simp only [List.mem_map]
+          exact ⟨left, leftMember, sameId⟩
+        · exact ih unique.2 leftMember rightMember
+
+private theorem total_asset_has_completion
+    {partialEstate : PartialEstate} {totalEstate : Estate}
+    (listed :
+      partialEstate.listedAssetsComplete totalEstate)
+    (sameIds : partialEstate.sameAssetIds totalEstate)
+    (totalUnique : (totalEstate.assets.map (·.id)).Nodup)
+    {totalAsset : Asset} (totalMember : totalAsset ∈ totalEstate.assets) :
+    ∃ partialAsset ∈ partialEstate.assets,
+      partialAsset.Completes totalAsset := by
+  have totalIdMember :
+      totalAsset.id ∈ totalEstate.assets.map (·.id) := by
+    simp only [List.mem_map]
+    exact ⟨totalAsset, totalMember, rfl⟩
+  have partialIdMember :
+      totalAsset.id ∈ partialEstate.assets.map (·.id) :=
+    (sameIds totalAsset.id).mpr totalIdMember
+  obtain ⟨partialAsset, partialMember, partialId⟩ :=
+    List.mem_map.mp partialIdMember
+  obtain ⟨completed, completedMember, completion⟩ :=
+    listed partialAsset partialMember
+  have completedEq : completed = totalAsset :=
+    asset_eq_of_mem_of_id_eq totalUnique
+      completedMember totalMember
+      (completion.1.symm.trans partialId)
+  subst completed
+  exact ⟨partialAsset, partialMember, completion⟩
+
+private theorem valuation_exact_components
+    {estate : PartialEstate} {lowerBound value : Money}
+    {missing : List (AssetId × AssetField)}
+    (exact : (estate.valuation lowerBound missing).exactValue = some value) :
+    estate.inventoryComplete = .known true ∧
+      dedupStable missing = [] ∧
+      lowerBound = value := by
+  cases inventory : estate.inventoryComplete with
+  | unknown => simp [PartialEstate.valuation, inventory] at exact
+  | known complete =>
+      cases complete with
+      | false => simp [PartialEstate.valuation, inventory] at exact
+      | true =>
+          cases missingEmpty : (dedupStable missing).isEmpty with
+          | false =>
+              simp [PartialEstate.valuation, inventory, missingEmpty] at exact
+          | true =>
+              have noMissing : dedupStable missing = [] :=
+                List.isEmpty_iff.mp missingEmpty
+              simp [PartialEstate.valuation, inventory, missingEmpty] at exact
+              exact ⟨rfl, noMissing, exact⟩
+
+@[simp] private theorem valuation_lowerBound
+    (estate : PartialEstate) (lowerBound : Money)
+    (missing : List (AssetId × AssetField)) :
+    (estate.valuation lowerBound missing).lowerBound = lowerBound := by
+  cases estate with
+  | mk assets inventory =>
+      cases inventory with
+      | unknown => simp [PartialEstate.valuation]
+      | known complete =>
+          cases complete <;> simp [PartialEstate.valuation]
+
+private theorem valuation_coherent
+    (estate : PartialEstate) (lowerBound : Money)
+    (missing : List (AssetId × AssetField)) :
+    (estate.valuation lowerBound missing).exactValue = none →
+      (estate.valuation lowerBound missing).missingFields ≠ [] ∨
+      (estate.valuation lowerBound missing).needsCompleteInventory = true := by
+  cases estate with
+  | mk assets inventory =>
+      cases inventory with
+      | unknown => simp [PartialEstate.valuation]
+      | known complete =>
+          cases complete with
+          | false => simp [PartialEstate.valuation]
+          | true =>
+              by_cases noMissing : dedupStable missing = []
+              · simp [PartialEstate.valuation, noMissing]
+              · simp [PartialEstate.valuation, noMissing]
+
+private theorem dedupStable_eq_nil_iff
+    [BEq α] [LawfulBEq α] (values : List α) :
+    dedupStable values = [] ↔ values = [] := by
+  constructor
+  · intro dedupEmpty
+    rw [List.eq_nil_iff_forall_not_mem]
+    intro value valueMember
+    have dedupMember :=
+      (mem_dedupStable value values).mpr valueMember
+    simp [dedupEmpty] at dedupMember
+  · rintro rfl
+    rfl
+
 @[simp] private theorem personalOrdinaryLowerBound_ofTotal
     (asset : Asset) :
     (PartialAsset.ofTotal asset).personalOrdinaryLowerBound =
@@ -505,6 +736,513 @@ def PartialEstate.primaryResidenceValuation
       cases kind <;> cases treatment <;> cases primary <;>
         simp [PartialAsset.ofTotal,
           PartialAsset.primaryResidenceValuationMissing]
+
+private theorem personalOrdinaryLowerBound_le_of_completes
+    {partialAsset : PartialAsset} {totalAsset : Asset}
+    (completion : partialAsset.Completes totalAsset) :
+    partialAsset.personalOrdinaryLowerBound ≤
+      totalAsset.personalOrdinaryValue := by
+  cases partialAsset with
+  | mk pid pname pkind pcurrent pdeath pencumbrances ptreatment
+      pincluded pprimary =>
+    cases totalAsset with
+    | mk tid tname tkind tcurrent tdeath tencumbrances ttreatment
+        tincluded tprimary =>
+      simp only [PartialAsset.Completes] at completion
+      rcases completion with
+        ⟨_, _, kind, current, _, _, treatment, included, _⟩
+      cases pkind <;> cases pincluded <;>
+        cases ptreatment <;> cases pcurrent <;>
+        cases tkind <;> cases tincluded <;> cases ttreatment <;>
+        simp_all [Knowledge.Completes,
+          PartialAsset.personalOrdinaryLowerBound,
+          Asset.personalOrdinaryValue]
+
+private theorem employmentLowerBound_le_of_completes
+    {partialAsset : PartialAsset} {totalAsset : Asset}
+    (completion : partialAsset.Completes totalAsset) :
+    partialAsset.employmentLowerBound ≤
+      totalAsset.qualifyingEmploymentCompensation := by
+  cases partialAsset with
+  | mk pid pname pkind pcurrent pdeath pencumbrances ptreatment
+      pincluded pprimary =>
+    cases totalAsset with
+    | mk tid tname tkind tcurrent tdeath tencumbrances ttreatment
+        tincluded tprimary =>
+      simp only [PartialAsset.Completes] at completion
+      rcases completion with
+        ⟨_, _, kind, current, _, _, treatment, included, _⟩
+      cases pkind <;> cases pincluded <;>
+        cases ptreatment <;> cases pcurrent <;>
+        cases tkind <;> cases tincluded <;> cases ttreatment <;>
+        simp_all [Knowledge.Completes,
+          PartialAsset.employmentLowerBound,
+          Asset.qualifyingEmploymentCompensation]
+
+private theorem smallRealLowerBound_le_of_completes
+    {partialAsset : PartialAsset} {totalAsset : Asset}
+    (completion : partialAsset.Completes totalAsset) :
+    partialAsset.smallRealLowerBound ≤
+      totalAsset.countedCaliforniaRealValue := by
+  cases partialAsset with
+  | mk pid pname pkind pcurrent pdeath pencumbrances ptreatment
+      pincluded pprimary =>
+    cases totalAsset with
+    | mk tid tname tkind tcurrent tdeath tencumbrances ttreatment
+        tincluded tprimary =>
+      simp only [PartialAsset.Completes] at completion
+      rcases completion with
+        ⟨_, _, kind, _, death, _, treatment, _, _⟩
+      cases pkind <;> cases ptreatment <;> cases pdeath <;>
+        cases tkind <;> cases ttreatment <;>
+        simp_all [Knowledge.Completes,
+          PartialAsset.smallRealLowerBound,
+          Asset.countedCaliforniaRealValue]
+
+private theorem primaryResidenceLowerBound_le_of_completes
+    {partialAsset : PartialAsset} {totalAsset : Asset}
+    (completion : partialAsset.Completes totalAsset) :
+    partialAsset.primaryResidenceLowerBound ≤
+      totalAsset.countedPrimaryResidenceValue := by
+  cases partialAsset with
+  | mk pid pname pkind pcurrent pdeath pencumbrances ptreatment
+      pincluded pprimary =>
+    cases totalAsset with
+    | mk tid tname tkind tcurrent tdeath tencumbrances ttreatment
+        tincluded tprimary =>
+      simp only [PartialAsset.Completes] at completion
+      rcases completion with
+        ⟨_, _, kind, _, death, _, treatment, _, primary⟩
+      cases pkind <;> cases ptreatment <;>
+        cases pprimary <;> cases pdeath <;>
+        cases tkind <;> cases ttreatment <;> cases tprimary <;>
+        simp_all [Knowledge.Completes,
+          PartialAsset.primaryResidenceLowerBound,
+          Asset.countedPrimaryResidenceValue]
+
+set_option maxHeartbeats 800000 in
+private theorem personalLowerBounds_eq_of_complete_fields
+    {partialAsset : PartialAsset} {totalAsset : Asset}
+    (completion : partialAsset.Completes totalAsset)
+    (completeFields : partialAsset.personalValuationMissing = []) :
+    partialAsset.personalOrdinaryLowerBound =
+        totalAsset.personalOrdinaryValue ∧
+      partialAsset.employmentLowerBound =
+        totalAsset.qualifyingEmploymentCompensation := by
+  cases partialAsset with
+  | mk pid pname pkind pcurrent pdeath pencumbrances ptreatment
+      pincluded pprimary =>
+    cases totalAsset with
+    | mk tid tname tkind tcurrent tdeath tencumbrances ttreatment
+        tincluded tprimary =>
+      simp only [PartialAsset.Completes] at completion
+      rcases completion with
+        ⟨_, _, kind, current, _, _, treatment, included, _⟩
+      cases pkind <;> cases pincluded <;>
+        cases ptreatment <;> cases pcurrent <;>
+        cases tkind <;> cases tincluded <;> cases ttreatment <;>
+        simp_all [Knowledge.Completes,
+          PartialAsset.personalValuationMissing,
+          PartialAsset.personalOrdinaryLowerBound,
+          PartialAsset.employmentLowerBound,
+          Asset.personalOrdinaryValue,
+          Asset.qualifyingEmploymentCompensation,
+          missingField]
+
+set_option maxHeartbeats 800000 in
+private theorem smallRealLowerBound_eq_of_complete_fields
+    {partialAsset : PartialAsset} {totalAsset : Asset}
+    (completion : partialAsset.Completes totalAsset)
+    (completeFields : partialAsset.smallRealValuationMissing = []) :
+    partialAsset.smallRealLowerBound =
+      totalAsset.countedCaliforniaRealValue := by
+  cases partialAsset with
+  | mk pid pname pkind pcurrent pdeath pencumbrances ptreatment
+      pincluded pprimary =>
+    cases totalAsset with
+    | mk tid tname tkind tcurrent tdeath tencumbrances ttreatment
+        tincluded tprimary =>
+      simp only [PartialAsset.Completes] at completion
+      rcases completion with
+        ⟨_, _, kind, _, death, _, treatment, _, _⟩
+      cases pkind <;> cases ptreatment <;> cases pdeath <;>
+        cases tkind <;> cases ttreatment <;>
+        simp_all [Knowledge.Completes,
+          PartialAsset.smallRealValuationMissing,
+          PartialAsset.smallRealLowerBound,
+          Asset.countedCaliforniaRealValue,
+          missingField]
+
+set_option maxHeartbeats 800000 in
+private theorem primaryResidenceLowerBound_eq_of_complete_fields
+    {partialAsset : PartialAsset} {totalAsset : Asset}
+    (completion : partialAsset.Completes totalAsset)
+    (completeFields :
+      partialAsset.primaryResidenceValuationMissing = []) :
+    partialAsset.primaryResidenceLowerBound =
+      totalAsset.countedPrimaryResidenceValue := by
+  cases partialAsset with
+  | mk pid pname pkind pcurrent pdeath pencumbrances ptreatment
+      pincluded pprimary =>
+    cases totalAsset with
+    | mk tid tname tkind tcurrent tdeath tencumbrances ttreatment
+        tincluded tprimary =>
+      simp only [PartialAsset.Completes] at completion
+      rcases completion with
+        ⟨_, _, kind, _, death, _, treatment, _, primary⟩
+      cases pkind <;> cases ptreatment <;>
+        cases pprimary <;> cases pdeath <;>
+        cases tkind <;> cases ttreatment <;> cases tprimary <;>
+        simp_all [Knowledge.Completes,
+          PartialAsset.primaryResidenceValuationMissing,
+          PartialAsset.primaryResidenceLowerBound,
+          Asset.countedPrimaryResidenceValue,
+          missingField]
+
+theorem personalValuation_lowerBound_le
+    {partialEstate : PartialEstate} {totalEstate : Estate}
+    (completion : partialEstate.Completes totalEstate)
+    (partialUnique :
+      (partialEstate.assets.map (·.id)).Nodup)
+    (totalUnique :
+      (totalEstate.assets.map (·.id)).Nodup)
+    (thresholds : Thresholds) :
+    (partialEstate.personalAffidavitValuation thresholds).lowerBound ≤
+      totalEstate.personalAffidavitValueWith thresholds := by
+  have ordinaryLe :=
+    sum_map_le_sum_map_of_unique_matches
+      (fun asset : PartialAsset => asset.id)
+      (fun asset : Asset => asset.id)
+      PartialAsset.personalOrdinaryLowerBound
+      Asset.personalOrdinaryValue
+      partialUnique totalUnique
+      (by
+        intro partialAsset partialMember
+        obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
+          completion.1 partialAsset partialMember
+        exact ⟨totalAsset, totalMember, assetCompletion.1,
+          personalOrdinaryLowerBound_le_of_completes assetCompletion⟩)
+  have employmentLe :=
+    sum_map_le_sum_map_of_unique_matches
+      (fun asset : PartialAsset => asset.id)
+      (fun asset : Asset => asset.id)
+      PartialAsset.employmentLowerBound
+      Asset.qualifyingEmploymentCompensation
+      partialUnique totalUnique
+      (by
+        intro partialAsset partialMember
+        obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
+          completion.1 partialAsset partialMember
+        exact ⟨totalAsset, totalMember, assetCompletion.1,
+          employmentLowerBound_le_of_completes assetCompletion⟩)
+  have excludedLe := excludedAmount_mono
+    (cap := thresholds.employmentCompensationExclusion) employmentLe
+  simpa [PartialEstate.personalAffidavitValuation,
+      Estate.personalAffidavitValueWith,
+      Estate.aggregateEmploymentCompensation] using
+        Nat.add_le_add ordinaryLe excludedLe
+
+theorem personalValuation_coherent
+    (estate : PartialEstate) (thresholds : Thresholds) :
+    (estate.personalAffidavitValuation thresholds).exactValue = none →
+      (estate.personalAffidavitValuation thresholds).missingFields ≠ [] ∨
+      (estate.personalAffidavitValuation thresholds).needsCompleteInventory =
+        true := by
+  exact valuation_coherent estate _ _
+
+theorem smallRealValuation_lowerBound_le
+    {partialEstate : PartialEstate} {totalEstate : Estate}
+    (completion : partialEstate.Completes totalEstate)
+    (partialUnique :
+      (partialEstate.assets.map (·.id)).Nodup)
+    (totalUnique :
+      (totalEstate.assets.map (·.id)).Nodup) :
+    partialEstate.smallRealPropertyValuation.lowerBound ≤
+      totalEstate.smallValueRealPropertyValue := by
+  have valueLe :=
+    sum_map_le_sum_map_of_unique_matches
+      (fun asset : PartialAsset => asset.id)
+      (fun asset : Asset => asset.id)
+      PartialAsset.smallRealLowerBound
+      Asset.countedCaliforniaRealValue
+      partialUnique totalUnique
+      (by
+        intro partialAsset partialMember
+        obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
+          completion.1 partialAsset partialMember
+        exact ⟨totalAsset, totalMember, assetCompletion.1,
+          smallRealLowerBound_le_of_completes assetCompletion⟩)
+  simpa [PartialEstate.smallRealPropertyValuation,
+      Estate.smallValueRealPropertyValue] using valueLe
+
+theorem smallRealValuation_coherent (estate : PartialEstate) :
+    estate.smallRealPropertyValuation.exactValue = none →
+      estate.smallRealPropertyValuation.missingFields ≠ [] ∨
+      estate.smallRealPropertyValuation.needsCompleteInventory = true := by
+  exact valuation_coherent estate _ _
+
+theorem primaryResidenceValuation_lowerBound_le
+    {partialEstate : PartialEstate} {totalEstate : Estate}
+    (completion : partialEstate.Completes totalEstate)
+    (partialUnique :
+      (partialEstate.assets.map (·.id)).Nodup)
+    (totalUnique :
+      (totalEstate.assets.map (·.id)).Nodup) :
+    partialEstate.primaryResidenceValuation.lowerBound ≤
+      totalEstate.primaryResidenceValue := by
+  have valueLe :=
+    sum_map_le_sum_map_of_unique_matches
+      (fun asset : PartialAsset => asset.id)
+      (fun asset : Asset => asset.id)
+      PartialAsset.primaryResidenceLowerBound
+      Asset.countedPrimaryResidenceValue
+      partialUnique totalUnique
+      (by
+        intro partialAsset partialMember
+        obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
+          completion.1 partialAsset partialMember
+        exact ⟨totalAsset, totalMember, assetCompletion.1,
+          primaryResidenceLowerBound_le_of_completes assetCompletion⟩)
+  simpa [PartialEstate.primaryResidenceValuation,
+      Estate.primaryResidenceValue] using valueLe
+
+theorem primaryResidenceValuation_coherent (estate : PartialEstate) :
+    estate.primaryResidenceValuation.exactValue = none →
+      estate.primaryResidenceValuation.missingFields ≠ [] ∨
+      estate.primaryResidenceValuation.needsCompleteInventory = true := by
+  exact valuation_coherent estate _ _
+
+theorem personalValuation_exact_eq
+    {partialEstate : PartialEstate} {totalEstate : Estate}
+    {value : Money}
+    (completion : partialEstate.Completes totalEstate)
+    (partialUnique :
+      (partialEstate.assets.map (·.id)).Nodup)
+    (totalUnique :
+      (totalEstate.assets.map (·.id)).Nodup)
+    (thresholds : Thresholds)
+    (exact :
+      (partialEstate.personalAffidavitValuation thresholds).exactValue =
+        some value) :
+    totalEstate.personalAffidavitValueWith thresholds = value := by
+  let ordinary :=
+    (partialEstate.assets.map
+      PartialAsset.personalOrdinaryLowerBound).sum
+  let employment :=
+    (partialEstate.assets.map PartialAsset.employmentLowerBound).sum
+  let missing :=
+    partialEstate.assets.flatMap PartialAsset.personalValuationMissing
+  have exact' :
+      (partialEstate.valuation
+        (ordinary +
+          (employment -
+            min employment thresholds.employmentCompensationExclusion))
+        missing).exactValue = some value := by
+    simpa [ordinary, employment, missing,
+      PartialEstate.personalAffidavitValuation] using exact
+  have components := valuation_exact_components exact'
+  have missingAll : missing = [] :=
+    (dedupStable_eq_nil_iff missing).mp components.2.1
+  have sameIds : partialEstate.sameAssetIds totalEstate := by
+    have inventory := components.1
+    unfold PartialEstate.Completes at completion
+    rw [inventory] at completion
+    exact completion.2
+  have ordinaryEq :=
+    sum_map_eq_sum_map_of_unique_matches
+      (fun asset : PartialAsset => asset.id)
+      (fun asset : Asset => asset.id)
+      PartialAsset.personalOrdinaryLowerBound
+      Asset.personalOrdinaryValue
+      partialUnique totalUnique
+      (by
+        intro partialAsset partialMember
+        obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
+          completion.1 partialAsset partialMember
+        have completeFields :
+            partialAsset.personalValuationMissing = [] :=
+          (List.flatMap_eq_nil_iff.mp missingAll)
+            partialAsset partialMember
+        exact ⟨totalAsset, totalMember, assetCompletion.1,
+          (personalLowerBounds_eq_of_complete_fields
+            assetCompletion completeFields).1⟩)
+      (by
+        intro totalAsset totalMember
+        obtain ⟨partialAsset, partialMember, assetCompletion⟩ :=
+          total_asset_has_completion completion.1 sameIds totalUnique totalMember
+        have completeFields :
+            partialAsset.personalValuationMissing = [] :=
+          (List.flatMap_eq_nil_iff.mp missingAll)
+            partialAsset partialMember
+        exact ⟨partialAsset, partialMember, assetCompletion.1.symm,
+          (personalLowerBounds_eq_of_complete_fields
+            assetCompletion completeFields).1.symm⟩)
+  have employmentEq :=
+    sum_map_eq_sum_map_of_unique_matches
+      (fun asset : PartialAsset => asset.id)
+      (fun asset : Asset => asset.id)
+      PartialAsset.employmentLowerBound
+      Asset.qualifyingEmploymentCompensation
+      partialUnique totalUnique
+      (by
+        intro partialAsset partialMember
+        obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
+          completion.1 partialAsset partialMember
+        have completeFields :
+            partialAsset.personalValuationMissing = [] :=
+          (List.flatMap_eq_nil_iff.mp missingAll)
+            partialAsset partialMember
+        exact ⟨totalAsset, totalMember, assetCompletion.1,
+          (personalLowerBounds_eq_of_complete_fields
+            assetCompletion completeFields).2⟩)
+      (by
+        intro totalAsset totalMember
+        obtain ⟨partialAsset, partialMember, assetCompletion⟩ :=
+          total_asset_has_completion completion.1 sameIds totalUnique totalMember
+        have completeFields :
+            partialAsset.personalValuationMissing = [] :=
+          (List.flatMap_eq_nil_iff.mp missingAll)
+            partialAsset partialMember
+        exact ⟨partialAsset, partialMember, assetCompletion.1.symm,
+          (personalLowerBounds_eq_of_complete_fields
+            assetCompletion completeFields).2.symm⟩)
+  calc
+    totalEstate.personalAffidavitValueWith thresholds =
+        ordinary +
+          (employment -
+            min employment thresholds.employmentCompensationExclusion) := by
+      simp [Estate.personalAffidavitValueWith,
+        Estate.aggregateEmploymentCompensation,
+        ordinary, employment,
+        ordinaryEq, employmentEq]
+    _ = value := components.2.2
+
+theorem smallRealValuation_exact_eq
+    {partialEstate : PartialEstate} {totalEstate : Estate}
+    {value : Money}
+    (completion : partialEstate.Completes totalEstate)
+    (partialUnique :
+      (partialEstate.assets.map (·.id)).Nodup)
+    (totalUnique :
+      (totalEstate.assets.map (·.id)).Nodup)
+    (exact :
+      partialEstate.smallRealPropertyValuation.exactValue =
+        some value) :
+    totalEstate.smallValueRealPropertyValue = value := by
+  let lowerBound :=
+    (partialEstate.assets.map PartialAsset.smallRealLowerBound).sum
+  let missing :=
+    partialEstate.assets.flatMap PartialAsset.smallRealValuationMissing
+  have exact' :
+      (partialEstate.valuation lowerBound missing).exactValue = some value := by
+    simpa [lowerBound, missing,
+      PartialEstate.smallRealPropertyValuation] using exact
+  have components := valuation_exact_components exact'
+  have missingAll : missing = [] :=
+    (dedupStable_eq_nil_iff missing).mp components.2.1
+  have sameIds : partialEstate.sameAssetIds totalEstate := by
+    have inventory := components.1
+    unfold PartialEstate.Completes at completion
+    rw [inventory] at completion
+    exact completion.2
+  have valueEq :=
+    sum_map_eq_sum_map_of_unique_matches
+      (fun asset : PartialAsset => asset.id)
+      (fun asset : Asset => asset.id)
+      PartialAsset.smallRealLowerBound
+      Asset.countedCaliforniaRealValue
+      partialUnique totalUnique
+      (by
+        intro partialAsset partialMember
+        obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
+          completion.1 partialAsset partialMember
+        have completeFields :
+            partialAsset.smallRealValuationMissing = [] :=
+          (List.flatMap_eq_nil_iff.mp missingAll)
+            partialAsset partialMember
+        exact ⟨totalAsset, totalMember, assetCompletion.1,
+          smallRealLowerBound_eq_of_complete_fields
+            assetCompletion completeFields⟩)
+      (by
+        intro totalAsset totalMember
+        obtain ⟨partialAsset, partialMember, assetCompletion⟩ :=
+          total_asset_has_completion completion.1 sameIds totalUnique totalMember
+        have completeFields :
+            partialAsset.smallRealValuationMissing = [] :=
+          (List.flatMap_eq_nil_iff.mp missingAll)
+            partialAsset partialMember
+        exact ⟨partialAsset, partialMember, assetCompletion.1.symm,
+          (smallRealLowerBound_eq_of_complete_fields
+            assetCompletion completeFields).symm⟩)
+  calc
+    totalEstate.smallValueRealPropertyValue = lowerBound := by
+      simpa [Estate.smallValueRealPropertyValue, lowerBound,
+        foldl_add_eq_sum_map] using valueEq.symm
+    _ = value := components.2.2
+
+theorem primaryResidenceValuation_exact_eq
+    {partialEstate : PartialEstate} {totalEstate : Estate}
+    {value : Money}
+    (completion : partialEstate.Completes totalEstate)
+    (partialUnique :
+      (partialEstate.assets.map (·.id)).Nodup)
+    (totalUnique :
+      (totalEstate.assets.map (·.id)).Nodup)
+    (exact :
+      partialEstate.primaryResidenceValuation.exactValue =
+        some value) :
+    totalEstate.primaryResidenceValue = value := by
+  let lowerBound :=
+    (partialEstate.assets.map PartialAsset.primaryResidenceLowerBound).sum
+  let missing :=
+    partialEstate.assets.flatMap
+      PartialAsset.primaryResidenceValuationMissing
+  have exact' :
+      (partialEstate.valuation lowerBound missing).exactValue = some value := by
+    simpa [lowerBound, missing,
+      PartialEstate.primaryResidenceValuation] using exact
+  have components := valuation_exact_components exact'
+  have missingAll : missing = [] :=
+    (dedupStable_eq_nil_iff missing).mp components.2.1
+  have sameIds : partialEstate.sameAssetIds totalEstate := by
+    have inventory := components.1
+    unfold PartialEstate.Completes at completion
+    rw [inventory] at completion
+    exact completion.2
+  have valueEq :=
+    sum_map_eq_sum_map_of_unique_matches
+      (fun asset : PartialAsset => asset.id)
+      (fun asset : Asset => asset.id)
+      PartialAsset.primaryResidenceLowerBound
+      Asset.countedPrimaryResidenceValue
+      partialUnique totalUnique
+      (by
+        intro partialAsset partialMember
+        obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
+          completion.1 partialAsset partialMember
+        have completeFields :
+            partialAsset.primaryResidenceValuationMissing = [] :=
+          (List.flatMap_eq_nil_iff.mp missingAll)
+            partialAsset partialMember
+        exact ⟨totalAsset, totalMember, assetCompletion.1,
+          primaryResidenceLowerBound_eq_of_complete_fields
+            assetCompletion completeFields⟩)
+      (by
+        intro totalAsset totalMember
+        obtain ⟨partialAsset, partialMember, assetCompletion⟩ :=
+          total_asset_has_completion completion.1 sameIds totalUnique totalMember
+        have completeFields :
+            partialAsset.primaryResidenceValuationMissing = [] :=
+          (List.flatMap_eq_nil_iff.mp missingAll)
+            partialAsset partialMember
+        exact ⟨partialAsset, partialMember, assetCompletion.1.symm,
+          (primaryResidenceLowerBound_eq_of_complete_fields
+            assetCompletion completeFields).symm⟩)
+  calc
+    totalEstate.primaryResidenceValue = lowerBound := by
+      simpa [Estate.primaryResidenceValue, lowerBound,
+        foldl_add_eq_sum_map] using valueEq.symm
+    _ = value := components.2.2
 
 @[simp] private theorem personalOrdinaryFold_ofTotal
     (assets : List Asset) (initial : Money) :
@@ -606,6 +1344,7 @@ theorem personalValuation_ofTotal_exact
     PartialEstate.valuation,
     Estate.personalAffidavitValueWith,
     Estate.aggregateEmploymentCompensation,
+    List.map_map, Function.comp_def,
     dedupStable]
 
 theorem smallRealPropertyValuation_ofTotal_exact
@@ -620,6 +1359,7 @@ theorem smallRealPropertyValuation_ofTotal_exact
     PartialEstate.smallRealPropertyValuation,
     PartialEstate.valuation,
     Estate.smallValueRealPropertyValue,
+    List.map_map, Function.comp_def,
     dedupStable]
 
 theorem primaryResidenceValuation_ofTotal_exact
@@ -634,6 +1374,7 @@ theorem primaryResidenceValuation_ofTotal_exact
     PartialEstate.primaryResidenceValuation,
     PartialEstate.valuation,
     Estate.primaryResidenceValue,
+    List.map_map, Function.comp_def,
     dedupStable]
 
 def Estate.containsCountedCaliforniaRealProperty (estate : Estate) : Bool :=

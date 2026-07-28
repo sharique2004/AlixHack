@@ -230,12 +230,24 @@ def validatePartialCase (partialCase : PartialTransferCase) : Except CaseError U
         | _, _ => []
       let assetIssues := partialCase.estate.assets.flatMap assetStructuralIssues
       let issues := duplicateIssues ++ targetIssues ++ assetIssues
-      match partialCase.toTotal? with
-      | some total =>
-          if total.WellFormed then .ok ()
-          else .error (.malformedCase issues)
-      | none =>
-          if issues = [] then .ok () else .error (.malformedCase issues)
+      if (partialCase.estate.assets.map (·.id)).Nodup then
+        match partialCase.toTotal? with
+        | some total =>
+            if total.WellFormed then .ok ()
+            else .error (.malformedCase issues)
+        | none =>
+            if issues = [] then .ok () else .error (.malformedCase issues)
+      else
+        .error (.malformedCase issues)
+
+theorem validatePartialCase_ok_nodup
+    {partialCase : PartialTransferCase}
+    (valid : validatePartialCase partialCase = .ok ()) :
+    (partialCase.estate.assets.map (·.id)).Nodup := by
+  by_cases unique : (partialCase.estate.assets.map (·.id)).Nodup
+  · exact unique
+  · unfold validatePartialCase at valid
+    split at valid <;> simp [unique] at valid
 
 def TransferCase.toPartial (case : TransferCase) : PartialTransferCase := {
   deathDate := .known case.deathDate
@@ -293,7 +305,15 @@ theorem validatePartialCase_toPartial_ok_iff
       cases error <;>
         simp [TransferCase.toPartial, dateError?, dateResult]
   | ok band =>
-      simp [TransferCase.toPartial, dateError?, dateResult]
+      by_cases wellFormed : case.WellFormed
+      · have unique :
+            ((PartialEstate.ofTotal case.estate).assets.map (·.id)).Nodup := by
+          simpa [PartialEstate.ofTotal, List.map_map,
+            PartialAsset.ofTotal, Function.comp_def] using wellFormed.1
+        simp [TransferCase.toPartial, dateError?, dateResult,
+          wellFormed, unique]
+      · simp [TransferCase.toPartial, dateError?, dateResult,
+          wellFormed]
 
 theorem toPartial_completes (case : TransferCase) :
     case.toPartial.Completes case := by
