@@ -5,4 +5,5 @@ import SimpleProbate.Estate
 import SimpleProbate.Case
 import SimpleProbate.Eligibility
 import SimpleProbate.Procedure
+import SimpleProbate.ProcedureAssessment
 import SimpleProbate.Examples
