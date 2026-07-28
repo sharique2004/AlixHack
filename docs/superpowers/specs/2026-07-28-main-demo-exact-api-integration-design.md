@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-28
 
-**Status:** Approved in conversation; written specification pending user review
+**Status:** Approved
 
 **Base branch:** `feat/exact-partial-probate-api`
 
