@@ -182,14 +182,28 @@ A partial estate contains its currently listed assets and an
 known subtotal above a cap can disqualify a capped route, but a known subtotal
 at or below a cap cannot establish qualification.
 
-Well-formed total estates require:
+The completion relation gives `inventoryComplete` precise semantics:
+
+- when it is known `true`, a completion has exactly the listed asset IDs;
+- when it is known `false`, a completion contains the listed assets and at
+  least one additional asset; and
+- when it is unknown, a completion contains at least the listed assets and may
+  contain more.
+
+Well-formed cases require:
 
 - unique asset IDs;
-- a resolvable target ID when a target is required;
-- property-kind and treatment combinations used by a route to be consistent;
-- only California real property to be marked as a primary residence or as
-  included in a section 13151 petition; and
-- every asset field required by a selected valuation to be known.
+- a total case's target ID to resolve to exactly one listed asset;
+- a partial case's known target ID to resolve when the inventory is known
+  complete, or otherwise to become a `targetAsset` information requirement;
+- an asset known to be a primary residence to be known California real
+  property; and
+- an asset known to be included in a section 13151 petition to be known
+  California real property and a primary residence.
+
+Other unusual but logically possible field combinations remain supplied facts;
+they are not rejected merely because they are uncommon. A missing field needed
+by a valuation is unresolved information, not a malformed-case error.
 
 Known violations of these structural rules yield `CaseError.malformedCase`
 with finite issue labels.
@@ -278,11 +292,15 @@ Applicability remains derived from case and context facts. An unknown
 applicability fact is reported as required information. A required item that
 is known absent is reported as a missing requirement.
 
+Only the four affidavit or petition routes have packets. Represent those routes
+with `CourtRoute`, and index packet types by their route so that a caller cannot
+pair a spousal packet with a personal-property route.
+
 The public packet function is:
 
 ```lean
 assessPacket :
-  Route → PartialTransferCase → PartialPacket →
+  (route : CourtRoute) → PartialTransferCase → PartialPacket route →
     Except CaseError ReadinessAssessment
 ```
 
@@ -373,7 +391,8 @@ completion leaves every simplified route ineligible.
 ### Partial-input soundness
 
 Define `Completes partial total` to mean that the total case agrees with every
-known fact in the partial case and supplies each unknown fact.
+known fact in the partial case, contains the partial estate's listed assets,
+obeys the `inventoryComplete` semantics above, and supplies each unknown fact.
 
 For every well-formed partial case:
 
