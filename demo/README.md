@@ -2,13 +2,21 @@
 
 Same case, two ways to answer. The same structured probate case is answered by
 **Gemini reading the statute on every query** (selectable model, real
-latency / token / cost metering) and by **this repository's Lean 4
+latency / token / cost metering) and by **this repository's exact Lean 4
 formalization** — compiled once, proof-checked, answering deterministically in
-milliseconds and re-running live as you drag the estate-value slider. A
+milliseconds and re-running live as you drag the estate-value slider. The
+Python service only validates the HTTP shape and forwards the raw case to the
+Lean JSON adapter; it has no rule evaluator. A
 head-to-head box compares time, tokens, and estimated cost per case.
 
 Ground-truth audit of the 12 sample cases: Lean 12/12, Gemini 23/36 runs
 ([AUDIT.md](AUDIT.md)).
+
+The input supports legacy `gross_value_cents` plus independent
+`current_gross_value_cents` and `date_of_death_value_cents`. The exact adapter
+uses each explicit fact for its corresponding valuation and falls back to the
+legacy value when that explicit key is absent or `null`. See [CONTRACT.md](CONTRACT.md)
+for the route projection and exact source inventory.
 
 ## Run it
 

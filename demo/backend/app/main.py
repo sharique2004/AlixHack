@@ -37,16 +37,18 @@ SAMPLE_CASES_PATH = REPO_ROOT / "content" / "sample_cases.json"
 # The Lean project is the repository root (demo/ lives inside it).
 ALIXHACK_DIR = REPO_ROOT.parent
 
-# Stable order per CONTRACT.md: every AlixHack/SimpleProbate/*.lean, then
-# ApiMain.lean. Unlisted SimpleProbate/*.lean files (if any appear) are
-# inserted alphabetically before ApiMain.lean.
+# Stable exact-engine dependency order per CONTRACT.md. Unlisted
+# SimpleProbate/*.lean files (if any appear) are inserted alphabetically before
+# ApiMain.lean.
 LEAN_SOURCE_ORDER = [
     "SimpleProbate/Date.lean",
     "SimpleProbate/Thresholds.lean",
+    "SimpleProbate/Decision.lean",
     "SimpleProbate/Estate.lean",
+    "SimpleProbate/Case.lean",
     "SimpleProbate/Eligibility.lean",
     "SimpleProbate/Procedure.lean",
-    "SimpleProbate/Partial.lean",
+    "SimpleProbate/ProcedureAssessment.lean",
     "SimpleProbate/Api.lean",
     "SimpleProbate/Examples.lean",
     "ApiMain.lean",

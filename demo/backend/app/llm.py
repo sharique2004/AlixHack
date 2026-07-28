@@ -60,7 +60,7 @@ Respond with ONLY a JSON object of this exact shape:
       "route": "<route id>",
       "status": "qualifies" | "does_not_qualify" | "needs_information",
       "reasons": [{"id": "snake_case_disqualifier_id", "text": "human-readable"}],  // non-empty iff does_not_qualify
-      "missing_facts": ["death_date", "estate.assets[1].gross_value_cents"],        // JSON paths into the case; non-empty iff needs_information
+      "missing_facts": ["death_date", "estate.assets[1].current_gross_value_cents"], // exact fact paths; non-empty iff needs_information
       "detail": "one line, may be \\"\\"",
       "forms": ["DE-305"]           // court form numbers; [] when none apply
     }

@@ -1,7 +1,7 @@
 [
  {
   "name": "eligible-personal-affidavit",
-  "blurb": "Two personal assets totaling $80,000, 444 days since death - qualifies for the \u00a713100 affidavit",
+  "blurb": "Two personal assets totaling $82,000 at current value, 444 days since death - qualifies for the \u00a713100 affidavit",
   "expected_verdict": "ELIGIBLE",
   "case": {
    "death_date": {
@@ -25,6 +25,8 @@
       "name": "Chase checking account",
       "kind": "personal",
       "gross_value_cents": 5000000,
+      "current_gross_value_cents": 5200000,
+      "date_of_death_value_cents": 4800000,
       "encumbrances_cents": 0,
       "treatment": "counted",
       "included_in_primary_residence_petition": false,
