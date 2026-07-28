@@ -3,6 +3,7 @@ import SimpleProbate.Thresholds
 import SimpleProbate.Estate
 import SimpleProbate.Eligibility
 import SimpleProbate.Procedure
+import SimpleProbate.Examples.Fixtures
 
 namespace SimpleProbate.Examples
 
@@ -29,16 +30,6 @@ example :
         smallValueRealPropertyAffidavit := Money.dollars 69_625
         survivingSpouseEarnings := Money.dollars 20_875
       } := by decide
-
-def countedPersonal (id : Nat) (name : String) (gross encumbrances : Money) : Asset := {
-  id := ⟨id⟩
-  name := name
-  kind := .personal
-  currentGrossValue := gross
-  dateOfDeathValue := gross
-  encumbrances := encumbrances
-  treatment := .counted
-}
 
 def estateAtPersonalCap : Estate := {
   assets := [
@@ -82,31 +73,6 @@ example :
       treatment := .counted
     }] } : Estate).smallValueRealPropertyValue = Money.dollars 69_625 := by decide
 
-def personalTarget : Asset :=
-  countedPersonal 7 "account" (Money.dollars 208_850) 0
-
-def personalTargetOverCap : Asset := {
-  personalTarget with
-  currentGrossValue := Money.dollars 208_850 + 1
-  dateOfDeathValue := Money.dollars 208_850 + 1
-}
-
-def base2026Case : TransferCase := {
-  deathDate := ⟨2026, 1, 1⟩
-  estate := { assets := [personalTarget] }
-  target := personalTarget
-  targetIsPartOfEstate := true
-  authority := .noProceeding
-  daysSinceDeath := 40
-  sixMonthsElapsed := false
-  claimantIsSuccessor := true
-  noSuperiorRight := true
-  funeralLastIllnessAndUnsecuredDebtsPaid := true
-  survivorStatus := .none
-  propertyPassesToSurvivor := false
-  propertyBelongsToSurvivor := false
-}
-
 example : PersonalPropertyAffidavitEligible base2026Case := by decide
 example : routeEligible { base2026Case with daysSinceDeath := 39 }
     .personalPropertyAffidavit = .ok false := by decide
@@ -115,56 +81,30 @@ example : routeEligible { base2026Case with
     .personalPropertyAffidavit = .ok true := by decide
 example : routeEligible { base2026Case with
     estate := { assets := [personalTargetOverCap] }
-    target := personalTargetOverCap }
+    targetId := personalTargetOverCap.id }
     .personalPropertyAffidavit = .ok false := by decide
-
-def smallRealTarget : Asset := {
-  id := ⟨8⟩
-  name := "small parcel"
-  kind := .californiaReal
-  currentGrossValue := Money.dollars 69_625
-  dateOfDeathValue := Money.dollars 69_625
-  treatment := .counted
-}
 
 example : routeEligible { base2026Case with
     estate := { assets := [smallRealTarget] }
-    target := smallRealTarget
+    targetId := smallRealTarget.id
     sixMonthsElapsed := true }
     .smallValueRealPropertyAffidavit = .ok true := by decide
 
 example : routeEligible { base2026Case with
     estate := { assets := [smallRealTarget] }
-    target := smallRealTarget
+    targetId := smallRealTarget.id
     sixMonthsElapsed := false }
     .smallValueRealPropertyAffidavit = .ok false := by decide
 
-def smallRealTargetOverCap : Asset := {
-  smallRealTarget with
-  currentGrossValue := Money.dollars 69_625 + 1
-  dateOfDeathValue := Money.dollars 69_625 + 1
-}
-
 example : routeEligible { base2026Case with
     estate := { assets := [smallRealTargetOverCap] }
-    target := smallRealTargetOverCap
+    targetId := smallRealTargetOverCap.id
     sixMonthsElapsed := true }
     .smallValueRealPropertyAffidavit = .ok false := by decide
 
-def primaryResidenceTarget : Asset := {
-  id := ⟨9⟩
-  name := "primary residence"
-  kind := .californiaReal
-  currentGrossValue := Money.dollars 750_000
-  dateOfDeathValue := Money.dollars 750_000
-  treatment := .counted
-  includedInPrimaryResidencePetition := true
-  isPrimaryResidence := true
-}
-
 example : routeEligible { base2026Case with
     estate := { assets := [primaryResidenceTarget] }
-    target := primaryResidenceTarget }
+    targetId := primaryResidenceTarget.id }
     .primaryResidencePetition = .ok true := by decide
 
 example : routeEligible { base2026Case with
@@ -173,9 +113,7 @@ example : routeEligible { base2026Case with
         currentGrossValue := Money.dollars 750_000 + 1
         dateOfDeathValue := Money.dollars 750_000 + 1 }
     ] }
-    target := { primaryResidenceTarget with
-      currentGrossValue := Money.dollars 750_000 + 1
-      dateOfDeathValue := Money.dollars 750_000 + 1 } }
+    targetId := primaryResidenceTarget.id }
     .primaryResidencePetition = .ok false := by decide
 
 def millionDollarRealTarget : Asset := {
@@ -191,8 +129,7 @@ def millionDollarRealTarget : Asset := {
 def malformedEmptyEstateRealCase : TransferCase := {
   base2026Case with
   estate := { assets := [] }
-  target := millionDollarRealTarget
-  targetIsPartOfEstate := true
+  targetId := millionDollarRealTarget.id
   sixMonthsElapsed := true
 }
 
@@ -205,8 +142,8 @@ example :
       .primaryResidencePetition = .ok false := by decide
 
 example : routeEligible { base2026Case with
-    estate := { assets := [] }
-    targetIsPartOfEstate := false
+    estate := { assets := [spousalTarget] }
+    targetId := spousalTarget.id
     claimantIsSuccessor := false
     noSuperiorRight := false
     survivorStatus := .spouse
@@ -230,7 +167,7 @@ def postSnapshotDirectCase : TransferCase := {
   base2026Case with
   deathDate := ⟨2027, 1, 1⟩
   estate := { assets := [directTransferTarget] }
-  target := directTransferTarget
+  targetId := directTransferTarget.id
 }
 
 example :
@@ -250,8 +187,8 @@ example :
 def postSnapshotSpousalCase : TransferCase := {
   base2026Case with
   deathDate := ⟨2027, 1, 1⟩
-  estate := { assets := [] }
-  targetIsPartOfEstate := false
+  estate := { assets := [spousalTarget] }
+  targetId := spousalTarget.id
   claimantIsSuccessor := false
   noSuperiorRight := false
   survivorStatus := .spouse
@@ -282,29 +219,6 @@ example :
 example :
     ¬RouteEligible invalidDateCase
       .formalProbateOrOtherProcedure := by decide
-
-def baseProcedureContext : ProcedureContext := {
-  claimsUnderWill := false
-  ownershipEvidenceAvailable := true
-  hasOtherEntitledSuccessors := false
-  knownGuardianOrConservator := false
-  institutionRequiresNotary := false
-  propertyAgreementExists := false
-}
-
-def completePersonalPacket : PersonalAffidavitPacket := {
-  affidavitDeclarations := true
-  certifiedDeathCertificate := true
-  identityProof := true
-  ownershipEvidencePresented := true
-  holderIndemnityAlternative := false
-  allEntitledSuccessorsSigned := true
-  notarized := false
-  consentAndLettersAttached := true
-  datedAmountListAttached := true
-  inventoryAndAppraisalAttached := true
-  presentedToHolder := true
-}
 
 example :
     PersonalAffidavitReady baseProcedureContext base2026Case
@@ -360,27 +274,6 @@ example :
     PersonalAffidavitReady baseProcedureContext base2026Case
       completePersonalPacket := by decide
 
-def smallReal2026Case : TransferCase := {
-  base2026Case with
-  estate := { assets := [smallRealTarget] }
-  target := smallRealTarget
-  sixMonthsElapsed := true
-}
-
-def completeSmallRealPacket : SmallRealPropertyPacket := {
-  de305Statements := true
-  notarizedAcknowledgments := true
-  inventoryAndAppraisalAttached := true
-  certifiedDeathCertificate := true
-  willAttached := true
-  consentAndLettersAttached := true
-  datedAmountListAttached := true
-  guardianOrConservatorDelivery := true
-  filedInProperCourt := true
-  clerkCertifiedCopyIssued := true
-  recordedInPropertyCounty := true
-}
-
 example :
     smallRealPropertyAffidavitMissing baseProcedureContext smallReal2026Case
       completeSmallRealPacket = [] := by decide
@@ -393,25 +286,6 @@ example :
     SmallRealPropertyAffidavitReady baseProcedureContext smallReal2026Case
       completeSmallRealPacket := by decide
 
-def primaryResidence2026Case : TransferCase := {
-  base2026Case with
-  estate := { assets := [primaryResidenceTarget] }
-  target := primaryResidenceTarget
-}
-
-def completePrimaryResidencePacket : PrimaryResidencePetitionPacket := {
-  de310VerifiedStatements := true
-  inventoryAndAppraisalAttached := true
-  willAttached := true
-  consentAttached := true
-  datedAmountListAttached := true
-  filedInProperCourt := true
-  heirAndDeviseeCopyWithinFiveBusinessDays := true
-  statutoryHearingNotice := true
-  courtFindingsMade := true
-  de315OrderIssued := true
-}
-
 example :
     primaryResidencePetitionMissing baseProcedureContext
       primaryResidence2026Case completePrimaryResidencePacket = [] := by decide
@@ -423,27 +297,6 @@ example :
 example :
     PrimaryResidencePetitionReady baseProcedureContext primaryResidence2026Case
       completePrimaryResidencePacket := by decide
-
-def spouse2026Case : TransferCase := {
-  base2026Case with
-  estate := { assets := [] }
-  targetIsPartOfEstate := false
-  claimantIsSuccessor := false
-  noSuperiorRight := false
-  survivorStatus := .spouse
-  propertyPassesToSurvivor := true
-}
-
-def completeSpousalPacket : SpousalPetitionPacket := {
-  de221Allegations := true
-  propertyDescriptionsAndSupportingFacts := true
-  knownInterestedPersonsListed := true
-  propertyAgreementDisclosed := true
-  willAttached := true
-  propertyAgreementAttached := true
-  statutoryHearingNotice := true
-  de226OrderIssued := true
-}
 
 example :
     spousalPetitionMissing baseProcedureContext spouse2026Case
@@ -480,12 +333,7 @@ example : routeEligible { base2026Case with
         dateOfDeathValue := Money.dollars 750_000
         isPrimaryResidence := false
     }] }
-    target := {
-      primaryResidenceTarget with
-        currentGrossValue := Money.dollars 750_000
-        dateOfDeathValue := Money.dollars 750_000
-        isPrimaryResidence := false
-    } }
+    targetId := primaryResidenceTarget.id }
     .primaryResidencePetition = .ok false := by decide
 
 example :
@@ -497,8 +345,8 @@ example :
 
 example :
     routeEligible { base2026Case with
-      estate := { assets := [] }
-      targetIsPartOfEstate := false
+      estate := { assets := [spousalTarget] }
+      targetId := spousalTarget.id
       claimantIsSuccessor := false
       noSuperiorRight := false
       survivorStatus := .registeredDomesticPartner

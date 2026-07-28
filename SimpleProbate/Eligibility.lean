@@ -1,12 +1,6 @@
-import SimpleProbate.Estate
+import SimpleProbate.Case
 
 namespace SimpleProbate
-
-inductive SummaryAuthority
-  | noProceeding
-  | writtenPersonalRepresentativeConsent
-  | blockedByProceeding
-deriving BEq, DecidableEq, Repr
 
 def SummaryAuthority.Permits : SummaryAuthority → Prop
   | .noProceeding => True
@@ -19,28 +13,6 @@ instance (authority : SummaryAuthority) : Decidable authority.Permits :=
   | .writtenPersonalRepresentativeConsent => isTrue trivial
   | .blockedByProceeding => isFalse id
 
-inductive SurvivorStatus
-  | none
-  | spouse
-  | registeredDomesticPartner
-deriving BEq, DecidableEq, Repr
-
-structure TransferCase where
-  deathDate : CivilDate
-  estate : Estate
-  target : Asset
-  targetIsPartOfEstate : Bool
-  authority : SummaryAuthority
-  daysSinceDeath : Nat
-  sixMonthsElapsed : Bool
-  claimantIsSuccessor : Bool
-  noSuperiorRight : Bool
-  funeralLastIllnessAndUnsecuredDebtsPaid : Bool
-  survivorStatus : SurvivorStatus
-  propertyPassesToSurvivor : Bool
-  propertyBelongsToSurvivor : Bool
-deriving DecidableEq, Repr
-
 def SupportedDeathDate (date : CivilDate) : Prop :=
   match classifyDeathDate date with
   | .ok _ => True
@@ -49,13 +21,6 @@ def SupportedDeathDate (date : CivilDate) : Prop :=
 instance (date : CivilDate) : Decidable (SupportedDeathDate date) := by
   unfold SupportedDeathDate
   cases classifyDeathDate date <;> infer_instance
-
-def TransferCase.WellFormed (case : TransferCase) : Prop :=
-  (case.targetIsPartOfEstate = true) ↔ case.target ∈ case.estate.assets
-
-instance (case : TransferCase) : Decidable case.WellFormed := by
-  unfold TransferCase.WellFormed
-  infer_instance
 
 inductive Route
   | directTransfer (basis : DirectTransferBasis)
@@ -68,56 +33,65 @@ deriving BEq, DecidableEq, Repr
 
 def DirectTransferEligible
     (case : TransferCase) (basis : DirectTransferBasis) : Prop :=
-  SupportedDeathDate case.deathDate ∧
-  case.WellFormed ∧
-  case.target.directTransferBasis = some basis
+  match case.targetAsset? with
+  | some target =>
+      SupportedDeathDate case.deathDate ∧
+      case.WellFormed ∧
+      target.directTransferBasis = some basis
+  | none => False
 
 def PersonalPropertyAffidavitEligible (case : TransferCase) : Prop :=
-  SupportedDeathDate case.deathDate ∧
-  case.WellFormed ∧
-  case.target.kind = .personal ∧
-  case.targetIsPartOfEstate = true ∧
-  case.claimantIsSuccessor = true ∧
-  case.noSuperiorRight = true ∧
-  40 ≤ case.daysSinceDeath ∧
-  case.authority.Permits ∧
-  match case.estate.personalAffidavitValue case.deathDate,
-      thresholdsFor case.deathDate with
-  | .ok value, .ok thresholds =>
-      value ≤ thresholds.personalPropertyAffidavit
-  | _, _ => False
+  match case.targetAsset? with
+  | some target =>
+      SupportedDeathDate case.deathDate ∧
+      case.WellFormed ∧
+      target.kind = .personal ∧
+      case.claimantIsSuccessor = true ∧
+      case.noSuperiorRight = true ∧
+      40 ≤ case.daysSinceDeath ∧
+      case.authority.Permits ∧
+      match case.estate.personalAffidavitValue case.deathDate,
+          thresholdsFor case.deathDate with
+      | .ok value, .ok thresholds =>
+          value ≤ thresholds.personalPropertyAffidavit
+      | _, _ => False
+  | none => False
 
 def SmallValueRealPropertyAffidavitEligible (case : TransferCase) : Prop :=
-  SupportedDeathDate case.deathDate ∧
-  case.WellFormed ∧
-  case.target.kind = .californiaReal ∧
-  case.target.treatment = .counted ∧
-  case.targetIsPartOfEstate = true ∧
-  case.claimantIsSuccessor = true ∧
-  case.noSuperiorRight = true ∧
-  case.sixMonthsElapsed = true ∧
-  case.authority.Permits ∧
-  case.funeralLastIllnessAndUnsecuredDebtsPaid = true ∧
-  match thresholdsFor case.deathDate with
-  | .ok thresholds =>
-      case.estate.smallValueRealPropertyValue ≤
-        thresholds.smallValueRealPropertyAffidavit
-  | .error _ => False
+  match case.targetAsset? with
+  | some target =>
+      SupportedDeathDate case.deathDate ∧
+      case.WellFormed ∧
+      target.kind = .californiaReal ∧
+      target.treatment = .counted ∧
+      case.claimantIsSuccessor = true ∧
+      case.noSuperiorRight = true ∧
+      case.sixMonthsElapsed = true ∧
+      case.authority.Permits ∧
+      case.funeralLastIllnessAndUnsecuredDebtsPaid = true ∧
+      match thresholdsFor case.deathDate with
+      | .ok thresholds =>
+          case.estate.smallValueRealPropertyValue ≤
+            thresholds.smallValueRealPropertyAffidavit
+      | .error _ => False
+  | none => False
 
 def PrimaryResidencePetitionEligible (case : TransferCase) : Prop :=
-  SupportedDeathDate case.deathDate ∧
-  case.WellFormed ∧
-  case.target.kind = .californiaReal ∧
-  case.target.treatment = .counted ∧
-  case.target.isPrimaryResidence = true ∧
-  case.targetIsPartOfEstate = true ∧
-  case.claimantIsSuccessor = true ∧
-  40 ≤ case.daysSinceDeath ∧
-  case.authority.Permits ∧
-  match thresholdsFor case.deathDate with
-  | .ok thresholds =>
-      case.estate.primaryResidenceValue ≤ thresholds.primaryResidencePetition
-  | .error _ => False
+  match case.targetAsset? with
+  | some target =>
+      SupportedDeathDate case.deathDate ∧
+      case.WellFormed ∧
+      target.kind = .californiaReal ∧
+      target.treatment = .counted ∧
+      target.isPrimaryResidence = true ∧
+      case.claimantIsSuccessor = true ∧
+      40 ≤ case.daysSinceDeath ∧
+      case.authority.Permits ∧
+      match thresholdsFor case.deathDate with
+      | .ok thresholds =>
+          case.estate.primaryResidenceValue ≤ thresholds.primaryResidencePetition
+      | .error _ => False
+  | none => False
 
 def SpousalPropertyPetitionEligible (case : TransferCase) : Prop :=
   SupportedDeathDate case.deathDate ∧
@@ -129,38 +103,44 @@ def SpousalPropertyPetitionEligible (case : TransferCase) : Prop :=
 instance (case : TransferCase) (basis : DirectTransferBasis) :
     Decidable (DirectTransferEligible case basis) := by
   unfold DirectTransferEligible
-  infer_instance
+  split <;> infer_instance
 
 instance (case : TransferCase) :
     Decidable (PersonalPropertyAffidavitEligible case) := by
   unfold PersonalPropertyAffidavitEligible
-  cases estateValue : case.estate.personalAffidavitValue case.deathDate with
-  | error _ =>
-      infer_instance
-  | ok _ =>
-      cases thresholdResult : thresholdsFor case.deathDate with
-      | error _ =>
-          infer_instance
-      | ok _ =>
-          infer_instance
+  split
+  · cases estateValue : case.estate.personalAffidavitValue case.deathDate with
+    | error _ =>
+        infer_instance
+    | ok _ =>
+        cases thresholdResult : thresholdsFor case.deathDate with
+        | error _ =>
+            infer_instance
+        | ok _ =>
+            infer_instance
+  · infer_instance
 
 instance (case : TransferCase) :
     Decidable (SmallValueRealPropertyAffidavitEligible case) := by
   unfold SmallValueRealPropertyAffidavitEligible
-  cases thresholdResult : thresholdsFor case.deathDate with
-  | error _ =>
-      infer_instance
-  | ok _ =>
-      infer_instance
+  split
+  · cases thresholdResult : thresholdsFor case.deathDate with
+    | error _ =>
+        infer_instance
+    | ok _ =>
+        infer_instance
+  · infer_instance
 
 instance (case : TransferCase) :
     Decidable (PrimaryResidencePetitionEligible case) := by
   unfold PrimaryResidencePetitionEligible
-  cases thresholdResult : thresholdsFor case.deathDate with
-  | error _ =>
-      infer_instance
-  | ok _ =>
-      infer_instance
+  split
+  · cases thresholdResult : thresholdsFor case.deathDate with
+    | error _ =>
+        infer_instance
+    | ok _ =>
+        infer_instance
+  · infer_instance
 
 instance (case : TransferCase) :
     Decidable (SpousalPropertyPetitionEligible case) := by
