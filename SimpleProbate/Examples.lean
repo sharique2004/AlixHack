@@ -367,4 +367,42 @@ example :
     SpousalPetitionReady baseProcedureContext spouse2026Case
       completeSpousalPacket := by decide
 
+example :
+    ({ assets := [
+      { personalTarget with treatment := .jointTenancy },
+      { countedPersonal "ordinary account" (Money.dollars 208_850) 0 with
+        includedInPrimaryResidencePetition := false }
+    ] } : Estate).personalAffidavitValue ⟨2026, 12, 31⟩ =
+      .ok (Money.dollars 208_850) := by decide
+
+example : routeEligible { base2026Case with
+    estate := { assets := [{
+      primaryResidenceTarget with
+        grossValue := Money.dollars 750_000
+        isPrimaryResidence := false
+    }] }
+    target := {
+      primaryResidenceTarget with
+        grossValue := Money.dollars 750_000
+        isPrimaryResidence := false
+    } }
+    .primaryResidencePetition = .ok false := by decide
+
+example :
+    routeEligible { base2026Case with authority := .noProceeding }
+      .personalPropertyAffidavit =
+    routeEligible { base2026Case with
+      authority := .writtenPersonalRepresentativeConsent }
+      .personalPropertyAffidavit := by decide
+
+example :
+    routeEligible { base2026Case with
+      estate := { assets := [] }
+      targetIsPartOfEstate := false
+      claimantIsSuccessor := false
+      noSuperiorRight := false
+      survivorStatus := .registeredDomesticPartner
+      propertyBelongsToSurvivor := true }
+      .spousalPropertyPetition = .ok true := by decide
+
 end SimpleProbate.Examples

@@ -1,4 +1,4 @@
 import SimpleProbate
 
 def main : IO Unit :=
-  IO.println "Simple probate formalization"
+  IO.println "California simple-transfer formalization — legal snapshot: 2026-12-31"
