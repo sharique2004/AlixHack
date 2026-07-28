@@ -14,7 +14,7 @@ The formalization is an executable and theorem-backed explanation of the
 published process. It is not legal advice, does not decide disputed facts, and
 does not prove that the supplied facts are true.
 
-## Source Snapshot and Authority
+## Source-as-of Date and Authority
 
 The model is based on the law and official guidance available on July 28, 2026.
 The California Courts page controls the project’s practical scope and route
@@ -113,8 +113,9 @@ Lean 4.32.1.
 ### `SimpleProbate/Date.lean`
 
 Defines `CivilDate`, date validity and comparison, the three supported
-date-of-death bands, and the 2026 snapshot boundary. Concrete boundary examples
-establish that March 31 and April 1 fall into the intended bands.
+date-of-death bands, and the December 31, 2026 supported death-date endpoint.
+Concrete boundary examples establish that March 31 and April 1 fall into the
+intended bands.
 
 ### `SimpleProbate/Thresholds.lean`
 
@@ -236,21 +237,26 @@ Contains compile-checked examples and theorem tests. It will include:
 
 ### Root modules and README
 
-`SimpleProbate.lean` imports every public module. `Main.lean` prints a brief
-snapshot identifier rather than acting as a legal questionnaire. `README.md`
-states the scope, run commands, source snapshot, disclaimer, and a
-source-to-definition traceability table.
+`SimpleProbate.lean` imports every public module. `Main.lean` prints the
+source-as-of date and supported death-date endpoint rather than acting as a
+legal questionnaire. `README.md` states the scope, run commands, source-as-of
+date, disclaimer, and a source-to-definition traceability table.
 
 ## Proof and API Design
 
-Each route has:
+Every route has:
 
 - a Prop-valued eligibility predicate;
 - a decidable instance or Boolean-facing query;
-- a readiness predicate for its procedural packet;
 - a theorem showing that every route returned by the candidate-route function
   satisfies the corresponding eligibility predicate; and
 - boundary examples compiled by `lake build`.
+
+The four court or affidavit routes—personal-property affidavit, small-value
+real-property affidavit, primary-residence petition, and spousal-property
+petition—also have readiness predicates for their procedural packets. Direct
+transfer and the fallback route expose workflows but no artificial readiness
+packets.
 
 The public API will favor descriptive names tied to source sections. Internal
 proof helpers remain private where possible. No axiom, `sorry`, `admit`, or

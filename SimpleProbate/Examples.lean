@@ -14,6 +14,9 @@ example : classifyDeathDate ⟨2025, 3, 31⟩ = .ok .apr2022ToMar2025 := by deci
 example : classifyDeathDate ⟨2025, 4, 1⟩ = .ok .apr2025ToDec2026 := by decide
 example : classifyDeathDate ⟨2026, 12, 31⟩ = .ok .apr2025ToDec2026 := by decide
 example : classifyDeathDate ⟨2027, 1, 1⟩ = .error .afterSnapshot := by decide
+example : classifyDeathDate ⟨0, 1, 1⟩ = .error .invalidDate := by decide
+example : classifyDeathDate ⟨1900, 2, 29⟩ = .error .invalidDate := by decide
+example : classifyDeathDate ⟨2000, 2, 29⟩ = .ok .beforeApr2022 := by decide
 example : classifyDeathDate ⟨2026, 2, 29⟩ = .error .invalidDate := by decide
 
 example :
@@ -78,6 +81,11 @@ example :
 def personalTarget : Asset :=
   countedPersonal "account" (Money.dollars 208_850) 0
 
+def personalTargetOverCap : Asset := {
+  personalTarget with
+  grossValue := Money.dollars 208_850 + 1
+}
+
 def base2026Case : TransferCase := {
   deathDate := ⟨2026, 1, 1⟩
   estate := { assets := [personalTarget] }
@@ -101,9 +109,8 @@ example : routeEligible { base2026Case with
     authority := .writtenPersonalRepresentativeConsent }
     .personalPropertyAffidavit = .ok true := by decide
 example : routeEligible { base2026Case with
-    estate := { assets := [
-      { personalTarget with grossValue := Money.dollars 208_850 + 1 }
-    ] } }
+    estate := { assets := [personalTargetOverCap] }
+    target := personalTargetOverCap }
     .personalPropertyAffidavit = .ok false := by decide
 
 def smallRealTarget : Asset := {
@@ -123,6 +130,17 @@ example : routeEligible { base2026Case with
     estate := { assets := [smallRealTarget] }
     target := smallRealTarget
     sixMonthsElapsed := false }
+    .smallValueRealPropertyAffidavit = .ok false := by decide
+
+def smallRealTargetOverCap : Asset := {
+  smallRealTarget with
+  grossValue := Money.dollars 69_625 + 1
+}
+
+example : routeEligible { base2026Case with
+    estate := { assets := [smallRealTargetOverCap] }
+    target := smallRealTargetOverCap
+    sixMonthsElapsed := true }
     .smallValueRealPropertyAffidavit = .ok false := by decide
 
 def primaryResidenceTarget : Asset := {
@@ -146,6 +164,30 @@ example : routeEligible { base2026Case with
     target := { primaryResidenceTarget with
       grossValue := Money.dollars 750_000 + 1 } }
     .primaryResidencePetition = .ok false := by decide
+
+def millionDollarRealTarget : Asset := {
+  name := "unlisted million-dollar primary residence"
+  kind := .californiaReal
+  grossValue := Money.dollars 1_000_000
+  treatment := .counted
+  isPrimaryResidence := true
+}
+
+def malformedEmptyEstateRealCase : TransferCase := {
+  base2026Case with
+  estate := { assets := [] }
+  target := millionDollarRealTarget
+  targetIsPartOfEstate := true
+  sixMonthsElapsed := true
+}
+
+example :
+    routeEligible malformedEmptyEstateRealCase
+      .smallValueRealPropertyAffidavit = .ok false := by decide
+
+example :
+    routeEligible malformedEmptyEstateRealCase
+      .primaryResidencePetition = .ok false := by decide
 
 example : routeEligible { base2026Case with
     estate := { assets := [] }
@@ -181,6 +223,9 @@ example :
       .error .afterSnapshot := by decide
 
 example :
+    ¬DirectTransferEligible postSnapshotDirectCase .namedBeneficiary := by decide
+
+example :
     candidateRoutes postSnapshotDirectCase = .error .afterSnapshot := by decide
 
 def postSnapshotSpousalCase : TransferCase := {
@@ -197,6 +242,8 @@ def postSnapshotSpousalCase : TransferCase := {
 example :
     routeEligible postSnapshotSpousalCase .spousalPropertyPetition =
       .error .afterSnapshot := by decide
+
+example : ¬SpousalPropertyPetitionEligible postSnapshotSpousalCase := by decide
 
 example :
     candidateRoutes postSnapshotSpousalCase = .error .afterSnapshot := by decide
@@ -279,6 +326,14 @@ example :
       completePersonalPacket = [] := by decide
 
 example :
+    personalAffidavitMissingChecked baseProcedureContext base2026Case
+      completePersonalPacket = .ok [] := by decide
+
+example :
+    personalAffidavitMissingChecked baseProcedureContext invalidDateCase
+      completePersonalPacket = .error .invalidDate := by decide
+
+example :
     PersonalAffidavitReady baseProcedureContext base2026Case
       completePersonalPacket := by decide
 
@@ -308,6 +363,10 @@ example :
       completeSmallRealPacket = [] := by decide
 
 example :
+    smallRealPropertyAffidavitMissingChecked baseProcedureContext
+      smallReal2026Case completeSmallRealPacket = .ok [] := by decide
+
+example :
     SmallRealPropertyAffidavitReady baseProcedureContext smallReal2026Case
       completeSmallRealPacket := by decide
 
@@ -333,6 +392,10 @@ def completePrimaryResidencePacket : PrimaryResidencePetitionPacket := {
 example :
     primaryResidencePetitionMissing baseProcedureContext
       primaryResidence2026Case completePrimaryResidencePacket = [] := by decide
+
+example :
+    primaryResidencePetitionMissingChecked baseProcedureContext
+      primaryResidence2026Case completePrimaryResidencePacket = .ok [] := by decide
 
 example :
     PrimaryResidencePetitionReady baseProcedureContext primaryResidence2026Case
@@ -364,8 +427,20 @@ example :
       completeSpousalPacket = [] := by decide
 
 example :
+    spousalPetitionMissingChecked baseProcedureContext spouse2026Case
+      completeSpousalPacket = .ok [] := by decide
+
+example :
     SpousalPetitionReady baseProcedureContext spouse2026Case
       completeSpousalPacket := by decide
+
+example :
+    ¬SpousalPetitionReady baseProcedureContext postSnapshotSpousalCase
+      completeSpousalPacket := by decide
+
+example :
+    spousalPetitionMissingChecked baseProcedureContext postSnapshotSpousalCase
+      completeSpousalPacket = .error .afterSnapshot := by decide
 
 example :
     ({ assets := [

@@ -41,6 +41,22 @@ structure TransferCase where
   propertyBelongsToSurvivor : Bool
 deriving DecidableEq, Repr
 
+def SupportedDeathDate (date : CivilDate) : Prop :=
+  match classifyDeathDate date with
+  | .ok _ => True
+  | .error _ => False
+
+instance (date : CivilDate) : Decidable (SupportedDeathDate date) := by
+  unfold SupportedDeathDate
+  cases classifyDeathDate date <;> infer_instance
+
+def TransferCase.WellFormed (case : TransferCase) : Prop :=
+  (case.targetIsPartOfEstate = true) ↔ case.target ∈ case.estate.assets
+
+instance (case : TransferCase) : Decidable case.WellFormed := by
+  unfold TransferCase.WellFormed
+  infer_instance
+
 inductive Route
   | directTransfer (basis : DirectTransferBasis)
   | personalPropertyAffidavit
@@ -52,9 +68,13 @@ deriving BEq, DecidableEq, Repr
 
 def DirectTransferEligible
     (case : TransferCase) (basis : DirectTransferBasis) : Prop :=
+  SupportedDeathDate case.deathDate ∧
+  case.WellFormed ∧
   case.target.directTransferBasis = some basis
 
 def PersonalPropertyAffidavitEligible (case : TransferCase) : Prop :=
+  SupportedDeathDate case.deathDate ∧
+  case.WellFormed ∧
   case.target.kind = .personal ∧
   case.targetIsPartOfEstate = true ∧
   case.claimantIsSuccessor = true ∧
@@ -68,6 +88,8 @@ def PersonalPropertyAffidavitEligible (case : TransferCase) : Prop :=
   | _, _ => False
 
 def SmallValueRealPropertyAffidavitEligible (case : TransferCase) : Prop :=
+  SupportedDeathDate case.deathDate ∧
+  case.WellFormed ∧
   case.target.kind = .californiaReal ∧
   case.target.treatment = .counted ∧
   case.targetIsPartOfEstate = true ∧
@@ -83,6 +105,8 @@ def SmallValueRealPropertyAffidavitEligible (case : TransferCase) : Prop :=
   | .error _ => False
 
 def PrimaryResidencePetitionEligible (case : TransferCase) : Prop :=
+  SupportedDeathDate case.deathDate ∧
+  case.WellFormed ∧
   case.target.kind = .californiaReal ∧
   case.target.treatment = .counted ∧
   case.target.isPrimaryResidence = true ∧
@@ -96,6 +120,8 @@ def PrimaryResidencePetitionEligible (case : TransferCase) : Prop :=
   | .error _ => False
 
 def SpousalPropertyPetitionEligible (case : TransferCase) : Prop :=
+  SupportedDeathDate case.deathDate ∧
+  case.WellFormed ∧
   case.survivorStatus ≠ .none ∧
   (case.propertyPassesToSurvivor = true ∨
    case.propertyBelongsToSurvivor = true)
@@ -151,7 +177,7 @@ def directTransferBases : List DirectTransferBasis := [
   .spousePassage
 ]
 
-def routeEligibleNonFallback (case : TransferCase) : Route → Bool
+private def routeEligibleNonFallback (case : TransferCase) : Route → Bool
   | .directTransfer basis => decide (DirectTransferEligible case basis)
   | .personalPropertyAffidavit =>
       decide (PersonalPropertyAffidavitEligible case)
@@ -163,7 +189,7 @@ def routeEligibleNonFallback (case : TransferCase) : Route → Bool
       decide (SpousalPropertyPetitionEligible case)
   | .formalProbateOrOtherProcedure => false
 
-def nonFallbackRoutes (case : TransferCase) : List Route :=
+private def nonFallbackRoutes (case : TransferCase) : List Route :=
   (directTransferBases.map Route.directTransfer ++
     ([.personalPropertyAffidavit,
       .smallValueRealPropertyAffidavit,

@@ -45,6 +45,7 @@ def CivilDate.daysInMonth (year month : Nat) : Nat :=
   | _ => 0
 
 def CivilDate.valid (d : CivilDate) : Bool :=
+  decide (1 ≤ d.year) &&
   decide (1 ≤ d.month) &&
   decide (d.month ≤ 12) &&
   decide (1 ≤ d.day) &&

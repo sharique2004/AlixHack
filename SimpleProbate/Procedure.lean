@@ -316,6 +316,38 @@ def spousalPetitionMissing
   missingUnless packet.statutoryHearingNotice .statutoryHearingNotice ++
   missingUnless packet.de226OrderIssued .de226Order
 
+private def checkedMissingRequirements
+    (date : CivilDate) (requirements : List Requirement) :
+    Except DateError (List Requirement) :=
+  match classifyDeathDate date with
+  | .ok _ => .ok requirements
+  | .error error => .error error
+
+def personalAffidavitMissingChecked
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : PersonalAffidavitPacket) : Except DateError (List Requirement) :=
+  checkedMissingRequirements case.deathDate
+    (personalAffidavitMissing context case packet)
+
+def smallRealPropertyAffidavitMissingChecked
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : SmallRealPropertyPacket) : Except DateError (List Requirement) :=
+  checkedMissingRequirements case.deathDate
+    (smallRealPropertyAffidavitMissing context case packet)
+
+def primaryResidencePetitionMissingChecked
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : PrimaryResidencePetitionPacket) :
+    Except DateError (List Requirement) :=
+  checkedMissingRequirements case.deathDate
+    (primaryResidencePetitionMissing context case packet)
+
+def spousalPetitionMissingChecked
+    (context : ProcedureContext) (case : TransferCase)
+    (packet : SpousalPetitionPacket) : Except DateError (List Requirement) :=
+  checkedMissingRequirements case.deathDate
+    (spousalPetitionMissing context case packet)
+
 inductive WorkflowStage
   | assessEligibility
   | waitForStatutoryPeriod

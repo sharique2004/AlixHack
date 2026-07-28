@@ -1,8 +1,9 @@
 # California Simple Transfer — Lean 4
 
 This project formalizes the California Courts simple-transfer probate decision
-process using rules in force during 2026. It computes candidate routes and
-checks typed eligibility and procedural-readiness predicates.
+process using law and official guidance available on July 28, 2026. It supports
+death dates through December 31, 2026, computes candidate routes, and checks
+typed eligibility and procedural-readiness predicates.
 
 ## Legal-model boundary
 
@@ -12,8 +13,9 @@ community-property character, primary-residence status, consent, notice,
 document truth, or court acceptance. The fallback is deliberately named
 `formalProbateOrOtherProcedure` because another procedure may apply.
 
-Invalid and post-2026 date queries return an explicit `DateError`; the model
-does not infer rules beyond its legal snapshot.
+Invalid dates and death dates after December 31, 2026 return an explicit
+`DateError`; the model does not infer rules beyond its supported death-date
+horizon. Its source-as-of date is July 28, 2026.
 
 ## Build and inspect
 
@@ -25,7 +27,8 @@ lake exe simple-probate
 
 ## Modules
 
-- `Date`: validates dates and enforces the December 31, 2026 snapshot.
+- `Date`: validates dates and enforces the December 31, 2026 supported
+  death-date endpoint.
 - `Thresholds`: contains the date-of-death threshold schedule in cents.
 - `Estate`: applies section 13050 exclusions and gross-value aggregation.
 - `Eligibility`: states and decides candidate transfer routes.
@@ -55,5 +58,5 @@ The spousal property petition has no value cap in this model.
 | `SpousalPropertyPetitionEligible` | Probate Code §§13500 and 13650–13656; forms DE-221/DE-226 |
 | packet readiness predicates | California Courts Self-Help Guide plus the cited Probate Code sections |
 
-The source snapshot and full URLs are recorded in
+The source-as-of date and full URLs are recorded in
 `docs/superpowers/specs/2026-07-28-california-simple-transfer-design.md`.
