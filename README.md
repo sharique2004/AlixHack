@@ -15,9 +15,11 @@ community-property character, primary-residence status, consent, notice,
 document truth, or court acceptance. The fallback is deliberately named
 `formalProbateOrOtherProcedure` because another procedure may apply.
 
-Invalid dates and death dates after December 31, 2026 return an explicit
-`DateError`; the model does not infer rules beyond its supported death-date
-horizon. Its source-as-of date is July 28, 2026.
+Lower-level date and threshold APIs return an explicit `DateError` for invalid
+dates and death dates after December 31, 2026. Assessment APIs instead return
+`CaseError.invalidDate` or `CaseError.afterSnapshot`; the model does not infer
+rules beyond its supported death-date horizon. Its source-as-of date is July
+28, 2026.
 
 ## Build and inspect
 
@@ -101,19 +103,26 @@ Each packet item is `present`, `absent`, or `unknown`.  `absent` is a known
 missing requirement, while `unknown` is unresolved information; the API keeps
 those outcomes distinct in its readiness assessment.
 
+For the small-real-property packet, this model encodes the §13200(d) will
+attachment rule as applicable only when `claimsUnderWill` is true and authority
+is `.noProceeding`. Written personal-representative consent and blocked or
+proceeding authority therefore do not require that attachment in the model.
+
 ### Proof contracts
 
 For total cases, `assessRoute_ofTotal_qualifies_iff` and
 `assessRoute_ofTotal_disqualified_iff` give positive and negative exactness
-for each route, and `assessRoutes_ofTotal_fallback_iff` gives exact fallback
-semantics.  For partial cases,
+for each route; the disqualified theorem requires successful total-case
+validation. `assessRoutes_ofTotal_fallback_iff` also requires successful
+total-case validation and gives exact fallback semantics. For partial cases,
 `assessRoute_qualifies_all_completions` proves that a qualifying route remains
 eligible in every well-formed completion, while
 `assessRoute_disqualified_no_completion` proves that a disqualified route has
 no eligible completion.  Packet contracts are
 `assessPacket_ofTotal_ready_iff` (readiness iff for every `CourtRoute`) and
-`assessPacket_ready_all_completions` (partial readiness sound for every
-completion).  The four route-specific
+`assessPacket_ready_all_completions` (partial readiness sound when the context,
+case, and route-indexed packet each satisfy their completion relation and the
+total case is `WellFormed`). The four route-specific
 `*Missing_empty_iff_ready` theorems connect total packet missing lists to
 readiness.
 
