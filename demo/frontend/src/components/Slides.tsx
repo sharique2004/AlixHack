@@ -65,30 +65,30 @@ export function Slides({ onClose }: SlidesProps) {
       <div className="slide" onClick={next}>
         {i === 0 && (
           <div className="slide-body">
-            <span className="slide-kicker">This demo · one small problem, on purpose</span>
+            <span className="slide-kicker">A deliberately small demo</span>
             <h2>
               Is this estate eligible for
               <br />
               California's simple transfer?
             </h2>
             <p className="slide-lead">
-              That's the entire scope — one narrow eligibility check under California
-              probate law. Small enough to build the answer both ways and compare them
-              honestly:
+              That is the whole scope. One narrow eligibility check under California
+              probate law, small enough to build the answer two ways and compare them
+              honestly.
             </p>
             <ul className="slide-points">
               <li>
-                <strong>Ask an LLM every time</strong> — Gemini reads the statute for every
-                single case
+                <strong>Ask an LLM every time.</strong> Gemini reads the statute fresh for
+                every case.
               </li>
               <li>
-                <strong>Run the compiled law</strong> — the same statute written once into
-                proof-checked Lean 4 code
+                <strong>Or run the compiled law.</strong> The same statute, written once as
+                proof-checked Lean 4 code.
               </li>
             </ul>
             <p className="slide-foot">
-              Real statute (Prob. Code §13100–13650) · real proofs (Lean 4, machine-checked) ·
-              real meters (time, tokens, cost)
+              Real statute (Prob. Code §13100–13650), real proofs (Lean 4,
+              machine-checked), real meters (time, tokens, cost)
             </p>
           </div>
         )}
@@ -100,24 +100,24 @@ export function Slides({ onClose }: SlidesProps) {
             <PipelineToday />
             <ul className="slide-points">
               <li>
-                <strong>The context window is the bottleneck</strong> — retrieved documents
-                must fit inside it, so information gets cut, and the model misses facts it
-                was never shown
+                <strong>The context window is the bottleneck.</strong> Retrieved documents
+                have to fit inside it. Whatever gets cut, the model never sees, so it
+                misses facts.
               </li>
               <li>
-                <strong>It fills the gaps</strong> — unknowns get treated as favorable: in
-                our audit it ruled a case <em>eligible</em> while the date of death was
-                still unknown
+                <strong>It fills the gaps.</strong> When a fact is unknown, the model
+                assumes the favorable answer. In our audit it called a case
+                <em> eligible</em> while the date of death was still unknown.
               </li>
               <li>
-                <strong>You pay per question, and the answer wobbles</strong> — ~15 s, ~8k
-                tokens, ≈ $0.01–0.03 per case — and only <strong>23 of 36 runs</strong>{" "}
-                matched the verified answer
+                <strong>You pay for every question, and answers wobble.</strong> Around 15
+                seconds, 8,000 tokens and a cent or three per case, and only{" "}
+                <strong>23 of 36 runs</strong> matched the verified answer.
               </li>
             </ul>
             <p className="slide-foot">
               Audit method: 3 independent runs on each of 12 cases, graded against the
-              statute — full write-up in AUDIT.md
+              statute. Full write-up in AUDIT.md.
             </p>
           </div>
         )}
@@ -125,24 +125,24 @@ export function Slides({ onClose }: SlidesProps) {
         {i === 2 && (
           <div className="slide-body">
             <span className="slide-kicker">What we built instead</span>
-            <h2>Use the LLM once — to write the code</h2>
+            <h2>Use the LLM once, to write the code</h2>
             <PipelineCompiled />
             <ul className="slide-points">
               <li>
-                <strong>Deterministic</strong> — same input, same answer, every time:{" "}
-                <strong>12/12</strong> on the same audit
+                <strong>Deterministic.</strong> Same input, same answer, every time.{" "}
+                <strong>12 out of 12</strong> on the same audit.
               </li>
               <li>
-                <strong>Verified</strong> — checked against the statutory predicates on{" "}
-                <strong>435,456 cases</strong>, zero mismatches
+                <strong>Verified.</strong> Checked against the statutory predicates on{" "}
+                <strong>435,456 cases</strong> with zero mismatches.
               </li>
               <li>
-                <strong>Instant and free</strong> — ~20 ms of compute, ≈ $0.0000005 per
-                case, zero tokens
+                <strong>Instant and nearly free.</strong> About 20 ms of compute and half
+                a millionth of a dollar per case. Zero tokens.
               </li>
               <li>
-                <strong>Honest about limits</strong> — refuses dates beyond its sources; a
-                missing fact means <em>“ask the family,”</em> never a guess
+                <strong>Honest about its limits.</strong> It refuses dates beyond its
+                sources, and a missing fact means asking the family, never guessing.
               </li>
             </ul>
             <p className="slide-close-line">The LLM is the compiler, not the judge.</p>
