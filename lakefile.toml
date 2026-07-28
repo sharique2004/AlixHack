@@ -8,3 +8,7 @@ name = "SimpleProbate"
 [[lean_exe]]
 name = "simple-probate"
 root = "Main"
+
+[[lean_exe]]
+name = "probate-api"
+root = "ApiMain"
