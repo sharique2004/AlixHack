@@ -1,7 +1,7 @@
 [
  {
   "name": "eligible-personal-affidavit",
-  "blurb": "Two personal assets totaling $80,000, 444 days since death - qualifies for the \u00a713100 affidavit",
+  "blurb": "Two personal assets totaling $80,000, 444 days after the death. Qualifies for the \u00a713100 affidavit.",
   "expected_verdict": "ELIGIBLE",
   "case": {
    "death_date": {
@@ -47,7 +47,7 @@
  },
  {
   "name": "eligible-direct-transfer",
-  "blurb": "Condo held in joint tenancy passes outside probate immediately - no 40-day wait needed",
+  "blurb": "A condo held in joint tenancy passes outside probate immediately, with no 40-day wait.",
   "expected_verdict": "ELIGIBLE",
   "case": {
    "death_date": {
@@ -93,7 +93,7 @@
  },
  {
   "name": "eligible-multiple-routes",
-  "blurb": "Surviving spouse: DE-221 spousal petition and the \u00a713100 affidavit both qualify",
+  "blurb": "A surviving spouse with two open routes: the DE-221 petition and the \u00a713100 affidavit both qualify.",
   "expected_verdict": "ELIGIBLE",
   "case": {
    "death_date": {
@@ -139,7 +139,7 @@
  },
  {
   "name": "needs-info-unknown-value",
-  "blurb": "One counted asset's value is unknown, so the affidavit cap cannot be resolved",
+  "blurb": "One asset has no appraisal yet, so the affidavit cap cannot be checked.",
   "expected_verdict": "INCOMPLETE_INFO",
   "case": {
    "death_date": {
@@ -185,7 +185,7 @@
  },
  {
   "name": "needs-info-unknown-death-date",
-  "blurb": "Death date unknown: bands and waiting periods cannot be resolved (not an error)",
+  "blurb": "Without a date of death, thresholds and waiting periods cannot be resolved.",
   "expected_verdict": "INCOMPLETE_INFO",
   "case": {
    "death_date": null,
@@ -218,7 +218,7 @@
  },
  {
   "name": "needs-info-inventory-not-confirmed",
-  "blurb": "Known values are under the cap but the inventory is not confirmed complete",
+  "blurb": "Known values sit under the cap, but the inventory is not confirmed complete.",
   "expected_verdict": "INCOMPLETE_INFO",
   "case": {
    "death_date": {
@@ -264,7 +264,7 @@
  },
  {
   "name": "over-cap-despite-unknowns",
-  "blurb": "Known counted subtotal $240,000 already exceeds the $208,850 cap - violation beats unknowns",
+  "blurb": "The known subtotal of $240,000 already exceeds the $208,850 cap, so the unknowns cannot save it.",
   "expected_verdict": "OTHER_FORM_REQUIRED",
   "case": {
    "death_date": {
@@ -319,7 +319,7 @@
  },
  {
   "name": "too-soon-20-days",
-  "blurb": "Small personal estate but only 20 days since death - the 40-day wait is not met",
+  "blurb": "A small personal estate, but only 20 days since the death. The 40-day wait is not met.",
   "expected_verdict": "OTHER_FORM_REQUIRED",
   "case": {
    "death_date": {
@@ -356,7 +356,7 @@
  },
  {
   "name": "eligible-primary-residence",
-  "blurb": "A $600,000 Sacramento primary residence fits the DE-310 petition under the AB 2016 $750,000 cap",
+  "blurb": "A $600,000 Sacramento family home fits the DE-310 petition under the $750,000 limit.",
   "expected_verdict": "ELIGIBLE",
   "case": {
    "death_date": {
@@ -402,7 +402,7 @@
  },
  {
   "name": "eligible-small-value-real-property",
-  "blurb": "A $55,000 desert lot fits the DE-305 affidavit: six months elapsed and debts paid",
+  "blurb": "A $55,000 desert lot fits the DE-305 affidavit. Six months have passed and debts are paid.",
   "expected_verdict": "ELIGIBLE",
   "case": {
    "death_date": {
@@ -448,7 +448,7 @@
  },
  {
   "name": "pre-2022-death-over-old-cap",
-  "blurb": "Death in 2021: $175,000 exceeds the old $166,250 limit even though it is under today's",
+  "blurb": "A 2021 death, so the older $166,250 limit applies. $175,000 exceeds it, though it would pass today.",
   "expected_verdict": "OTHER_FORM_REQUIRED",
   "case": {
    "death_date": {
@@ -485,7 +485,7 @@
  },
  {
   "name": "error-after-snapshot",
-  "blurb": "Death date 2027-03-01 is past the model's 2026-12-31 snapshot - returns an error, not a verdict",
+  "blurb": "A death date in 2027 is beyond the model's sources, so it returns an error instead of guessing.",
   "expected_verdict": "ERROR",
   "case": {
    "death_date": {

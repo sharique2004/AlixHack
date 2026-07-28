@@ -88,7 +88,7 @@ function CompareBox({ llm, lean }: { llm: EngineState; lean: EngineState }) {
           {llm.status === "pending"
             ? "Waiting for the LLM run to finish…"
             : llm.stale
-              ? "The case changed — run the LLM again to compare on this exact case."
+              ? "The case changed. Run the LLM again to compare on this exact case."
               : "Run the LLM on this case to see the head-to-head."}
         </p>
       </section>
@@ -320,8 +320,8 @@ export default function App() {
           Two Ways to Answer
         </h1>
         <p className="intro-sub">
-          Pick a probate case below. An LLM reads the statute on every query — the compiled,
-          proof-checked Lean code was written once and answers instantly.
+          Pick a probate case below. An LLM reads the statute on every query. The
+          compiled, proof-checked Lean code was written once and answers instantly.
         </p>
       </header>
 
@@ -355,7 +355,7 @@ export default function App() {
                 step={500_00}
                 value={dialCents}
                 onChange={(e) => onDial(Number(e.target.value))}
-                aria-label="Target asset value in dollars — the compiled engine re-answers live"
+                aria-label="Target asset value in dollars. The compiled engine re-answers live."
               />
               <span className="slider-value">
                 ${Math.round(dialCents / 100).toLocaleString()}
@@ -514,7 +514,7 @@ export default function App() {
               >
                 Verified · 435,456 cases · 12/12 audit
               </span>
-              <span className="chip chip-blue">Live — re-answers as you drag</span>
+              <span className="chip chip-blue">Re-answers live as you drag</span>
             </div>
           }
           state={lean}
@@ -539,9 +539,9 @@ export default function App() {
 
       <footer className="page-foot">
         <p>
-          Demo only — not legal advice; all cases are fictional. Sources: CA Courts self-help
-          guide as of 2026-07-28; death dates supported through 2026-12-31. Lean proves
-          consequences of supplied facts, not their truth.
+          Demo only, not legal advice. All cases are fictional. Sources: the CA Courts
+          self-help guide as of 2026-07-28, death dates supported through 2026-12-31. Lean
+          proves consequences of supplied facts, not their truth.
         </p>
       </footer>
     </div>
