@@ -204,7 +204,8 @@ def RouteEligible (case : TransferCase) : Route → Prop
       SmallValueRealPropertyAffidavitEligible case
   | .primaryResidencePetition => PrimaryResidencePetitionEligible case
   | .spousalPropertyPetition => SpousalPropertyPetitionEligible case
-  | .formalProbateOrOtherProcedure => nonFallbackRoutes case = []
+  | .formalProbateOrOtherProcedure =>
+      SupportedDeathDate case.deathDate ∧ nonFallbackRoutes case = []
 
 instance (case : TransferCase) (route : Route) :
     Decidable (RouteEligible case route) := by
@@ -234,6 +235,7 @@ def routeEligible
 
 private theorem candidateRoutesUnchecked_sound
     {case : TransferCase} {route : Route}
+    (supportedDate : SupportedDeathDate case.deathDate)
     (membership : route ∈ candidateRoutesUnchecked case) :
     RouteEligible case route := by
   unfold candidateRoutesUnchecked at membership
@@ -242,7 +244,7 @@ private theorem candidateRoutesUnchecked_sound
     have routeIsFallback : route = .formalProbateOrOtherProcedure := by
       simpa using membership
     subst route
-    simpa [RouteEligible] using noRoutes
+    exact ⟨supportedDate, noRoutes⟩
   next someRoute =>
     have eligibleCheck :
         routeEligibleNonFallback case route = true :=
@@ -263,8 +265,10 @@ theorem candidateRoutes_sound
       contradiction
   | ok _ =>
       rw [dateResult] at result
+      have supportedDate : SupportedDeathDate case.deathDate := by
+        simp [SupportedDeathDate, dateResult]
       injection result with routesEq
       subst routes
-      exact candidateRoutesUnchecked_sound membership
+      exact candidateRoutesUnchecked_sound supportedDate membership
 
 end SimpleProbate

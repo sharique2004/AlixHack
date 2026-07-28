@@ -228,6 +228,10 @@ example :
 example :
     candidateRoutes postSnapshotDirectCase = .error .afterSnapshot := by decide
 
+example :
+    ¬RouteEligible postSnapshotDirectCase
+      .formalProbateOrOtherProcedure := by decide
+
 def postSnapshotSpousalCase : TransferCase := {
   base2026Case with
   deathDate := ⟨2027, 1, 1⟩
@@ -259,6 +263,10 @@ example :
 
 example :
     candidateRoutes invalidDateCase = .error .invalidDate := by decide
+
+example :
+    ¬RouteEligible invalidDateCase
+      .formalProbateOrOtherProcedure := by decide
 
 def baseProcedureContext : ProcedureContext := {
   claimsUnderWill := false
