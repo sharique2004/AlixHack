@@ -34,7 +34,7 @@ inductive DirectTransferBasis
   | transferOnDeath
   | multiplePartyAccount
   | spousePassage
-deriving BEq, DecidableEq, Repr
+deriving BEq, ReflBEq, LawfulBEq, DecidableEq, Repr
 
 structure AssetId where
   value : Nat
@@ -80,6 +80,13 @@ deriving DecidableEq, Repr
 structure PartialEstate where
   assets : List PartialAsset
   inventoryComplete : Knowledge Bool
+deriving DecidableEq, Repr
+
+structure PartialValuation where
+  lowerBound : Money
+  exactValue : Option Money
+  missingFields : List (AssetId × AssetField)
+  needsCompleteInventory : Bool
 deriving DecidableEq, Repr
 
 def PartialAsset.Completes
@@ -284,6 +291,350 @@ def Asset.countedPrimaryResidenceValue (asset : Asset) : Money :=
 def Estate.primaryResidenceValue (estate : Estate) : Money :=
   estate.assets.foldl
     (fun total asset => total + asset.countedPrimaryResidenceValue) 0
+
+private def missingField
+    (asset : PartialAsset) (field : AssetField) :
+    List (AssetId × AssetField) :=
+  [(asset.id, field)]
+
+private def PartialAsset.personalOrdinaryLowerBound
+    (asset : PartialAsset) : Money :=
+  match asset.kind, asset.includedInPrimaryResidencePetition with
+  | .known .outsideCaliforniaReal, _ => 0
+  | _, .known true => 0
+  | .known _, .known false =>
+      match asset.treatment, asset.currentGrossValue with
+      | .known .counted, .known value => value
+      | _, _ => 0
+  | _, _ => 0
+
+private def PartialAsset.employmentLowerBound
+    (asset : PartialAsset) : Money :=
+  match asset.kind, asset.includedInPrimaryResidencePetition with
+  | .known .outsideCaliforniaReal, _ => 0
+  | _, .known true => 0
+  | .known _, .known false =>
+      match asset.treatment, asset.currentGrossValue with
+      | .known .employmentCompensation, .known value => value
+      | _, _ => 0
+  | _, _ => 0
+
+private def PartialAsset.personalValuationMissing
+    (asset : PartialAsset) : List (AssetId × AssetField) :=
+  match asset.kind, asset.includedInPrimaryResidencePetition with
+  | .known .outsideCaliforniaReal, _ => []
+  | _, .known true => []
+  | .known _, .known false =>
+      match asset.treatment with
+      | .unknown => missingField asset .treatment
+      | .known .counted | .known .employmentCompensation =>
+          match asset.currentGrossValue with
+          | .unknown => missingField asset .currentGrossValue
+          | .known _ => []
+      | .known _ => []
+  | .unknown, .unknown =>
+      missingField asset .kind ++
+        missingField asset .primaryPetitionInclusion
+  | .unknown, .known false => missingField asset .kind
+  | .known _, .unknown => missingField asset .primaryPetitionInclusion
+
+private def PartialAsset.smallRealLowerBound
+    (asset : PartialAsset) : Money :=
+  match asset.kind with
+  | .known .californiaReal =>
+      match asset.treatment, asset.dateOfDeathValue with
+      | .known .counted, .known value => value
+      | _, _ => 0
+  | _ => 0
+
+private def PartialAsset.smallRealValuationMissing
+    (asset : PartialAsset) : List (AssetId × AssetField) :=
+  match asset.kind with
+  | .unknown => missingField asset .kind
+  | .known .californiaReal =>
+      match asset.treatment with
+      | .unknown => missingField asset .treatment
+      | .known .counted =>
+          match asset.dateOfDeathValue with
+          | .unknown => missingField asset .dateOfDeathValue
+          | .known _ => []
+      | .known _ => []
+  | .known _ => []
+
+private def PartialAsset.primaryResidenceLowerBound
+    (asset : PartialAsset) : Money :=
+  match asset.kind, asset.treatment, asset.isPrimaryResidence,
+      asset.dateOfDeathValue with
+  | .known .californiaReal, .known .counted, .known true, .known value => value
+  | _, _, _, _ => 0
+
+private def PartialAsset.primaryResidenceValuationMissing
+    (asset : PartialAsset) : List (AssetId × AssetField) :=
+  match asset.kind with
+  | .unknown => missingField asset .kind
+  | .known .californiaReal =>
+      match asset.treatment with
+      | .unknown => missingField asset .treatment
+      | .known .counted =>
+          match asset.isPrimaryResidence with
+          | .unknown => missingField asset .primaryResidence
+          | .known true =>
+              match asset.dateOfDeathValue with
+              | .unknown => missingField asset .dateOfDeathValue
+              | .known _ => []
+          | .known false => []
+      | .known _ => []
+  | .known _ => []
+
+private def PartialEstate.valuation
+    (estate : PartialEstate)
+    (lowerBound : Money)
+    (missing : List (AssetId × AssetField)) :
+    PartialValuation :=
+  let missingFields := dedupStable missing
+  match estate.inventoryComplete with
+  | .known true => {
+      lowerBound
+      exactValue :=
+        if missingFields.isEmpty then some lowerBound else none
+      missingFields
+      needsCompleteInventory := false
+    }
+  | _ => {
+      lowerBound
+      exactValue := none
+      missingFields
+      needsCompleteInventory := true
+    }
+
+def PartialEstate.personalAffidavitValuation
+    (estate : PartialEstate) (thresholds : Thresholds) :
+    PartialValuation :=
+  let ordinary := estate.assets.foldl
+    (fun total asset => total + asset.personalOrdinaryLowerBound) 0
+  let employment := estate.assets.foldl
+    (fun total asset => total + asset.employmentLowerBound) 0
+  let lowerBound :=
+    ordinary +
+      (employment -
+        min employment thresholds.employmentCompensationExclusion)
+  estate.valuation lowerBound
+    (estate.assets.flatMap PartialAsset.personalValuationMissing)
+
+def PartialEstate.smallRealPropertyValuation
+    (estate : PartialEstate) : PartialValuation :=
+  let lowerBound := estate.assets.foldl
+    (fun total asset => total + asset.smallRealLowerBound) 0
+  estate.valuation lowerBound
+    (estate.assets.flatMap PartialAsset.smallRealValuationMissing)
+
+def PartialEstate.primaryResidenceValuation
+    (estate : PartialEstate) : PartialValuation :=
+  let lowerBound := estate.assets.foldl
+    (fun total asset => total + asset.primaryResidenceLowerBound) 0
+  estate.valuation lowerBound
+    (estate.assets.flatMap PartialAsset.primaryResidenceValuationMissing)
+
+@[simp] private theorem personalOrdinaryLowerBound_ofTotal
+    (asset : Asset) :
+    (PartialAsset.ofTotal asset).personalOrdinaryLowerBound =
+      asset.personalOrdinaryValue := by
+  cases asset with
+  | mk id name kind current death encumbrances treatment included primary =>
+      cases kind <;> cases treatment <;> cases included <;>
+        simp [PartialAsset.ofTotal,
+          PartialAsset.personalOrdinaryLowerBound,
+          Asset.personalOrdinaryValue]
+
+@[simp] private theorem employmentLowerBound_ofTotal
+    (asset : Asset) :
+    (PartialAsset.ofTotal asset).employmentLowerBound =
+      asset.qualifyingEmploymentCompensation := by
+  cases asset with
+  | mk id name kind current death encumbrances treatment included primary =>
+      cases kind <;> cases treatment <;> cases included <;>
+        simp [PartialAsset.ofTotal,
+          PartialAsset.employmentLowerBound,
+          Asset.qualifyingEmploymentCompensation]
+
+@[simp] private theorem personalValuationMissing_ofTotal
+    (asset : Asset) :
+    (PartialAsset.ofTotal asset).personalValuationMissing = [] := by
+  cases asset with
+  | mk id name kind current death encumbrances treatment included primary =>
+      cases kind <;> cases treatment <;> cases included <;>
+        simp [PartialAsset.ofTotal,
+          PartialAsset.personalValuationMissing]
+
+@[simp] private theorem smallRealLowerBound_ofTotal
+    (asset : Asset) :
+    (PartialAsset.ofTotal asset).smallRealLowerBound =
+      asset.countedCaliforniaRealValue := by
+  cases asset with
+  | mk id name kind current death encumbrances treatment included primary =>
+      cases kind <;> cases treatment <;>
+        simp [PartialAsset.ofTotal,
+          PartialAsset.smallRealLowerBound,
+          Asset.countedCaliforniaRealValue]
+
+@[simp] private theorem smallRealValuationMissing_ofTotal
+    (asset : Asset) :
+    (PartialAsset.ofTotal asset).smallRealValuationMissing = [] := by
+  cases asset with
+  | mk id name kind current death encumbrances treatment included primary =>
+      cases kind <;> cases treatment <;>
+        simp [PartialAsset.ofTotal,
+          PartialAsset.smallRealValuationMissing]
+
+@[simp] private theorem primaryResidenceLowerBound_ofTotal
+    (asset : Asset) :
+    (PartialAsset.ofTotal asset).primaryResidenceLowerBound =
+      asset.countedPrimaryResidenceValue := by
+  cases asset with
+  | mk id name kind current death encumbrances treatment included primary =>
+      cases kind <;> cases treatment <;> cases primary <;>
+        simp [PartialAsset.ofTotal,
+          PartialAsset.primaryResidenceLowerBound,
+          Asset.countedPrimaryResidenceValue]
+
+@[simp] private theorem primaryResidenceValuationMissing_ofTotal
+    (asset : Asset) :
+    (PartialAsset.ofTotal asset).primaryResidenceValuationMissing = [] := by
+  cases asset with
+  | mk id name kind current death encumbrances treatment included primary =>
+      cases kind <;> cases treatment <;> cases primary <;>
+        simp [PartialAsset.ofTotal,
+          PartialAsset.primaryResidenceValuationMissing]
+
+@[simp] private theorem personalOrdinaryFold_ofTotal
+    (assets : List Asset) (initial : Money) :
+    (assets.map PartialAsset.ofTotal).foldl
+        (fun total asset => total + asset.personalOrdinaryLowerBound)
+        initial =
+      assets.foldl
+        (fun total asset => total + asset.personalOrdinaryValue)
+        initial := by
+  induction assets generalizing initial with
+  | nil => rfl
+  | cons head tail ih =>
+      simp only [List.map_cons, List.foldl_cons,
+        personalOrdinaryLowerBound_ofTotal]
+      exact ih _
+
+@[simp] private theorem employmentFold_ofTotal
+    (assets : List Asset) (initial : Money) :
+    (assets.map PartialAsset.ofTotal).foldl
+        (fun total asset => total + asset.employmentLowerBound)
+        initial =
+      assets.foldl
+        (fun total asset => total + asset.qualifyingEmploymentCompensation)
+        initial := by
+  induction assets generalizing initial with
+  | nil => rfl
+  | cons head tail ih =>
+      simp only [List.map_cons, List.foldl_cons,
+        employmentLowerBound_ofTotal]
+      exact ih _
+
+@[simp] private theorem personalMissing_ofTotal
+    (assets : List Asset) :
+    (assets.map PartialAsset.ofTotal).flatMap
+        PartialAsset.personalValuationMissing = [] := by
+  induction assets with
+  | nil => rfl
+  | cons head tail ih =>
+      simp [ih]
+
+@[simp] private theorem smallRealFold_ofTotal
+    (assets : List Asset) (initial : Money) :
+    (assets.map PartialAsset.ofTotal).foldl
+        (fun total asset => total + asset.smallRealLowerBound)
+        initial =
+      assets.foldl
+        (fun total asset => total + asset.countedCaliforniaRealValue)
+        initial := by
+  induction assets generalizing initial with
+  | nil => rfl
+  | cons head tail ih =>
+      simp only [List.map_cons, List.foldl_cons,
+        smallRealLowerBound_ofTotal]
+      exact ih _
+
+@[simp] private theorem smallRealMissing_ofTotal
+    (assets : List Asset) :
+    (assets.map PartialAsset.ofTotal).flatMap
+        PartialAsset.smallRealValuationMissing = [] := by
+  induction assets with
+  | nil => rfl
+  | cons head tail ih =>
+      simp [ih]
+
+@[simp] private theorem primaryResidenceFold_ofTotal
+    (assets : List Asset) (initial : Money) :
+    (assets.map PartialAsset.ofTotal).foldl
+        (fun total asset => total + asset.primaryResidenceLowerBound)
+        initial =
+      assets.foldl
+        (fun total asset => total + asset.countedPrimaryResidenceValue)
+        initial := by
+  induction assets generalizing initial with
+  | nil => rfl
+  | cons head tail ih =>
+      simp only [List.map_cons, List.foldl_cons,
+        primaryResidenceLowerBound_ofTotal]
+      exact ih _
+
+@[simp] private theorem primaryResidenceMissing_ofTotal
+    (assets : List Asset) :
+    (assets.map PartialAsset.ofTotal).flatMap
+        PartialAsset.primaryResidenceValuationMissing = [] := by
+  induction assets with
+  | nil => rfl
+  | cons head tail ih =>
+      simp [ih]
+
+theorem personalValuation_ofTotal_exact
+    (estate : Estate) (thresholds : Thresholds) :
+    (PartialEstate.ofTotal estate).personalAffidavitValuation thresholds = {
+      lowerBound := estate.personalAffidavitValueWith thresholds
+      exactValue := some (estate.personalAffidavitValueWith thresholds)
+      missingFields := []
+      needsCompleteInventory := false
+    } := by
+  simp [PartialEstate.ofTotal,
+    PartialEstate.personalAffidavitValuation,
+    PartialEstate.valuation,
+    Estate.personalAffidavitValueWith,
+    Estate.aggregateEmploymentCompensation,
+    dedupStable]
+
+theorem smallRealPropertyValuation_ofTotal_exact
+    (estate : Estate) :
+    (PartialEstate.ofTotal estate).smallRealPropertyValuation = {
+      lowerBound := estate.smallValueRealPropertyValue
+      exactValue := some estate.smallValueRealPropertyValue
+      missingFields := []
+      needsCompleteInventory := false
+    } := by
+  simp [PartialEstate.ofTotal,
+    PartialEstate.smallRealPropertyValuation,
+    PartialEstate.valuation,
+    Estate.smallValueRealPropertyValue,
+    dedupStable]
+
+theorem primaryResidenceValuation_ofTotal_exact
+    (estate : Estate) :
+    (PartialEstate.ofTotal estate).primaryResidenceValuation = {
+      lowerBound := estate.primaryResidenceValue
+      exactValue := some estate.primaryResidenceValue
+      missingFields := []
+      needsCompleteInventory := false
+    } := by
+  simp [PartialEstate.ofTotal,
+    PartialEstate.primaryResidenceValuation,
+    PartialEstate.valuation,
+    Estate.primaryResidenceValue,
+    dedupStable]
 
 def Estate.containsCountedCaliforniaRealProperty (estate : Estate) : Bool :=
   estate.assets.any

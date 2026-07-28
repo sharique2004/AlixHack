@@ -181,7 +181,7 @@ example :
     candidateRoutes postSnapshotDirectCase = .error .afterSnapshot := by decide
 
 example :
-    ¬RouteEligible postSnapshotDirectCase
+    ¬LegacyRouteEligible postSnapshotDirectCase
       .formalProbateOrOtherProcedure := by decide
 
 def postSnapshotSpousalCase : TransferCase := {
@@ -217,7 +217,7 @@ example :
     candidateRoutes invalidDateCase = .error .invalidDate := by decide
 
 example :
-    ¬RouteEligible invalidDateCase
+    ¬LegacyRouteEligible invalidDateCase
       .formalProbateOrOtherProcedure := by decide
 
 example :
