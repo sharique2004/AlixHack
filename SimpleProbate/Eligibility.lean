@@ -127,6 +127,9 @@ def simplifiedRoutes : List SimplifiedRoute :=
     .spousalPropertyPetition
   ]
 
+theorem simplifiedRoutes_nodup : simplifiedRoutes.Nodup := by
+  decide
+
 def overallOutcome (reports : List RouteReport) : OverallOutcome :=
   if reports.any (fun report =>
       match report.status with
@@ -1721,7 +1724,7 @@ theorem assessRoute_disqualified_no_completion
                           (overCap :=
                             EligibilityFailure.personalPropertyValueOverCap)
                           (personalValuation_lowerBound_le estateCompletion
-                            partialUnique wellFormed.1 thresholds)
+                            partialUnique thresholds)
                           (fun value exactValue =>
                             personalValuation_exact_eq estateCompletion
                               partialUnique wellFormed.1 thresholds exactValue)
@@ -1783,7 +1786,7 @@ theorem assessRoute_disqualified_no_completion
                           (overCap :=
                             EligibilityFailure.smallRealPropertyValueOverCap)
                           (smallRealValuation_lowerBound_le estateCompletion
-                            partialUnique wellFormed.1)
+                            partialUnique)
                           (fun value exactValue =>
                             smallRealValuation_exact_eq estateCompletion
                               partialUnique wellFormed.1 exactValue)
@@ -1832,7 +1835,7 @@ theorem assessRoute_disqualified_no_completion
                           (overCap :=
                             EligibilityFailure.primaryResidenceValueOverCap)
                           (primaryResidenceValuation_lowerBound_le
-                            estateCompletion partialUnique wellFormed.1)
+                            estateCompletion partialUnique)
                           (fun value exactValue =>
                             primaryResidenceValuation_exact_eq
                               estateCompletion partialUnique wellFormed.1
@@ -1957,7 +1960,7 @@ theorem assessRoute_disqualified_no_completion
                       simp [thresholdResult] at capEligible
                       have lowerSound :=
                         personalValuation_lowerBound_le estateCompletion
-                          partialUnique wellFormed.1 thresholds
+                          partialUnique thresholds
                       have valuationNo :=
                         valuationChecks_no_violation_of_completion
                           (overCap :=
@@ -2052,7 +2055,7 @@ theorem assessRoute_disqualified_no_completion
                       simp [thresholdResult] at capEligible
                       have lowerSound :=
                         smallRealValuation_lowerBound_le estateCompletion
-                          partialUnique wellFormed.1
+                          partialUnique
                       have valuationNo :=
                         valuationChecks_no_violation_of_completion
                           (overCap :=
@@ -2142,7 +2145,7 @@ theorem assessRoute_disqualified_no_completion
                       simp [thresholdResult] at capEligible
                       have lowerSound :=
                         primaryResidenceValuation_lowerBound_le
-                          estateCompletion partialUnique wellFormed.1
+                          estateCompletion partialUnique
                       have valuationNo :=
                         valuationChecks_no_violation_of_completion
                           (overCap :=
@@ -2426,6 +2429,42 @@ private theorem mapM_routeReports_exact
                   exact (ih tailResult route).mpr
                     ⟨report, tailMember, reportRoute, reportResult⟩
 
+private theorem mapM_routeReports_routes
+    {case : PartialTransferCase}
+    {routes : List SimplifiedRoute} {reports : List RouteReport}
+    (result :
+      routes.mapM (assessRouteReport case) = .ok reports) :
+    reports.map (·.route) = routes := by
+  induction routes generalizing reports with
+  | nil =>
+      simp only [List.mapM_nil, pure, Except.pure] at result
+      injection result with reportsEq
+      subst reports
+      rfl
+  | cons head tail ih =>
+      cases headResult : assessRouteReport case head with
+      | error error =>
+          rw [List.mapM_cons, headResult] at result
+          change (Except.error error : Except CaseError (List RouteReport)) =
+            .ok reports at result
+          contradiction
+      | ok headReport =>
+          cases tailResult :
+              tail.mapM (assessRouteReport case) with
+          | error error =>
+              rw [List.mapM_cons, headResult, tailResult] at result
+              change
+                (Except.error error : Except CaseError (List RouteReport)) =
+                  .ok reports at result
+              contradiction
+          | ok tailReports =>
+              simp [List.mapM_cons, headResult, tailResult] at result
+              injection result with reportsEq
+              subst reports
+              have headRoute :=
+                (assessRouteReport_ok_sound headResult).1
+              simp [headRoute, ih tailResult]
+
 private theorem mapM_routeReports_members
     {case : PartialTransferCase}
     {routes : List SimplifiedRoute} {reports : List RouteReport}
@@ -2697,6 +2736,39 @@ private theorem assessRoutes_ok_of_validate
     simp [assessRoutes, valid, reportsResult]
     rfl⟩
 
+theorem assessRoutes_routes_exact
+    {case : PartialTransferCase} {assessment : CaseAssessment}
+    (result : assessRoutes case = .ok assessment) :
+    assessment.routes.map (·.route) = simplifiedRoutes := by
+  cases valid : validatePartialCase case with
+  | error error =>
+      unfold assessRoutes at result
+      rw [valid] at result
+      change (Except.error error : Except CaseError CaseAssessment) =
+        .ok assessment at result
+      contradiction
+  | ok unitValue =>
+      cases unitValue
+      obtain ⟨reports, reportsResult⟩ :=
+        mapM_routeReports_ok_of_validate valid simplifiedRoutes
+      unfold assessRoutes at result
+      rw [valid, reportsResult] at result
+      change
+        Except.ok {
+          routes := reports
+          overall := overallOutcome reports
+        } = .ok assessment at result
+      injection result with assessmentEq
+      subst assessment
+      exact mapM_routeReports_routes reportsResult
+
+theorem assessRoutes_routes_nodup
+    {case : PartialTransferCase} {assessment : CaseAssessment}
+    (result : assessRoutes case = .ok assessment) :
+    (assessment.routes.map (·.route)).Nodup := by
+  rw [assessRoutes_routes_exact result]
+  exact simplifiedRoutes_nodup
+
 theorem assessRoutes_fallback_all_completions_ineligible
     {partialCase : PartialTransferCase} {assessment : CaseAssessment}
     (result : assessRoutes partialCase = .ok assessment)
@@ -2734,8 +2806,18 @@ theorem assessRoutes_fallback_all_completions_ineligible
       have allDisqualified :=
         (overallOutcome_fallback_iff reports).mp fallback
       intro total completion wellFormed route routeMember
-      obtain ⟨report, reportMember, reportRoute, routeResult⟩ :=
-        (mapM_routeReports_exact reportsResult route).mp routeMember
+      have routeOrder :=
+        mapM_routeReports_routes reportsResult
+      have reportRouteMember :
+          route ∈ reports.map (·.route) := by
+        rw [routeOrder]
+        exact routeMember
+      obtain ⟨report, reportMember, reportRoute⟩ :=
+        List.mem_map.mp reportRouteMember
+      subst route
+      have routeResult :=
+        (mapM_routeReports_members reportsResult
+          report reportMember).2
       obtain ⟨reasons, status⟩ :=
         allDisqualified report reportMember
       rw [status] at routeResult

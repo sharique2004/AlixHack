@@ -467,7 +467,6 @@ private theorem sum_map_le_sum_map_of_unique_matches
     (partialId : α → AssetId) (totalId : β → AssetId)
     (partialValue : α → Money) (totalValue : β → Money)
     (partialUnique : (partials.map partialId).Nodup)
-    (totalUnique : (totals.map totalId).Nodup)
     (matching :
       ∀ item ∈ partials,
         ∃ completed ∈ totals,
@@ -497,13 +496,8 @@ private theorem sum_map_le_sum_map_of_unique_matches
         exact ⟨remainder,
           (List.mem_erase_of_ne different).2 remainderMember,
           remainderId, remainderLe⟩
-      have remainderUnique :
-          ((totals.erase completed).map totalId).Nodup := by
-        have permutedIds :=
-          (List.perm_cons_erase completedMember).map totalId
-        exact (permutedIds.nodup totalUnique).tail
       have tailLe :=
-        ih partialUnique.2 remainderUnique tailMatches
+        ih partialUnique.2 tailMatches
       have totalSum :
           (totals.map totalValue).sum =
             totalValue completed +
@@ -535,7 +529,7 @@ private theorem sum_map_eq_sum_map_of_unique_matches
   apply Nat.le_antisymm
   · exact sum_map_le_sum_map_of_unique_matches
       partialId totalId partialValue totalValue
-      partialUnique totalUnique
+      partialUnique
       (by
         intro item itemMember
         obtain ⟨completed, completedMember, sameId, sameValue⟩ :=
@@ -543,7 +537,7 @@ private theorem sum_map_eq_sum_map_of_unique_matches
         exact ⟨completed, completedMember, sameId, Nat.le_of_eq sameValue⟩)
   · exact sum_map_le_sum_map_of_unique_matches
       totalId partialId totalValue partialValue
-      totalUnique partialUnique
+      totalUnique
       (by
         intro completed completedMember
         obtain ⟨item, itemMember, sameId, sameValue⟩ :=
@@ -904,8 +898,6 @@ theorem personalValuation_lowerBound_le
     (completion : partialEstate.Completes totalEstate)
     (partialUnique :
       (partialEstate.assets.map (·.id)).Nodup)
-    (totalUnique :
-      (totalEstate.assets.map (·.id)).Nodup)
     (thresholds : Thresholds) :
     (partialEstate.personalAffidavitValuation thresholds).lowerBound ≤
       totalEstate.personalAffidavitValueWith thresholds := by
@@ -915,7 +907,7 @@ theorem personalValuation_lowerBound_le
       (fun asset : Asset => asset.id)
       PartialAsset.personalOrdinaryLowerBound
       Asset.personalOrdinaryValue
-      partialUnique totalUnique
+      partialUnique
       (by
         intro partialAsset partialMember
         obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
@@ -928,7 +920,7 @@ theorem personalValuation_lowerBound_le
       (fun asset : Asset => asset.id)
       PartialAsset.employmentLowerBound
       Asset.qualifyingEmploymentCompensation
-      partialUnique totalUnique
+      partialUnique
       (by
         intro partialAsset partialMember
         obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
@@ -954,9 +946,7 @@ theorem smallRealValuation_lowerBound_le
     {partialEstate : PartialEstate} {totalEstate : Estate}
     (completion : partialEstate.Completes totalEstate)
     (partialUnique :
-      (partialEstate.assets.map (·.id)).Nodup)
-    (totalUnique :
-      (totalEstate.assets.map (·.id)).Nodup) :
+      (partialEstate.assets.map (·.id)).Nodup) :
     partialEstate.smallRealPropertyValuation.lowerBound ≤
       totalEstate.smallValueRealPropertyValue := by
   have valueLe :=
@@ -965,7 +955,7 @@ theorem smallRealValuation_lowerBound_le
       (fun asset : Asset => asset.id)
       PartialAsset.smallRealLowerBound
       Asset.countedCaliforniaRealValue
-      partialUnique totalUnique
+      partialUnique
       (by
         intro partialAsset partialMember
         obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
@@ -985,9 +975,7 @@ theorem primaryResidenceValuation_lowerBound_le
     {partialEstate : PartialEstate} {totalEstate : Estate}
     (completion : partialEstate.Completes totalEstate)
     (partialUnique :
-      (partialEstate.assets.map (·.id)).Nodup)
-    (totalUnique :
-      (totalEstate.assets.map (·.id)).Nodup) :
+      (partialEstate.assets.map (·.id)).Nodup) :
     partialEstate.primaryResidenceValuation.lowerBound ≤
       totalEstate.primaryResidenceValue := by
   have valueLe :=
@@ -996,7 +984,7 @@ theorem primaryResidenceValuation_lowerBound_le
       (fun asset : Asset => asset.id)
       PartialAsset.primaryResidenceLowerBound
       Asset.countedPrimaryResidenceValue
-      partialUnique totalUnique
+      partialUnique
       (by
         intro partialAsset partialMember
         obtain ⟨totalAsset, totalMember, assetCompletion⟩ :=
