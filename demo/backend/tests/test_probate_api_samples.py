@@ -8,6 +8,7 @@ import subprocess
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 from app.lean_runner import analyze_lean
 
@@ -23,6 +24,23 @@ ROUTE_ORDER = [
     "spousal_property_petition",
     "formal_probate_or_other_procedure",
 ]
+
+# These fixture verdicts are recorded independently of the fixture metadata.
+EXPECTED_VERDICTS = {
+    "eligible-personal-affidavit": "ELIGIBLE",
+    "eligible-direct-transfer": "ELIGIBLE",
+    "eligible-multiple-routes": "ELIGIBLE",
+    "needs-info-unknown-value": "INCOMPLETE_INFO",
+    "needs-info-unknown-death-date": "INCOMPLETE_INFO",
+    "needs-info-inventory-not-confirmed": "INCOMPLETE_INFO",
+    "over-cap-despite-unknowns": "OTHER_FORM_REQUIRED",
+    "too-soon-20-days": "OTHER_FORM_REQUIRED",
+    "eligible-primary-residence": "ELIGIBLE",
+    "eligible-small-value-real-property": "ELIGIBLE",
+    "pre-2022-death-over-old-cap": "OTHER_FORM_REQUIRED",
+    "error-after-snapshot": "ERROR",
+}
+EXPECTED_ERROR_TYPES = {"error-after-snapshot": "after_snapshot"}
 
 # These literals are independently derived from sample_cases.derivation.md.
 # A status change here identifies a changed externally visible route result.
@@ -205,13 +223,21 @@ class ProbateApiSampleContractTests(unittest.TestCase):
 
         samples = load_samples()
         self.assertEqual(len(samples), 12)
+        self.assertEqual(
+            {sample["name"] for sample in samples}, set(EXPECTED_VERDICTS)
+        )
         for sample in samples:
             with self.subTest(sample=sample["name"]):
                 result = run_probate_api(sample["case"])
-                expected_verdict = sample["expected_verdict"]
+                expected_verdict = EXPECTED_VERDICTS[sample["name"]]
+                self.assertEqual(sample["expected_verdict"], expected_verdict)
                 if expected_verdict == "ERROR":
                     self.assertIsNone(result["verdict"])
                     self.assertIsNotNone(result["error"])
+                    self.assertEqual(
+                        result["error"]["type"],
+                        EXPECTED_ERROR_TYPES[sample["name"]],
+                    )
                     self.assertEqual(result["routes"], [])
                     continue
 
@@ -271,7 +297,11 @@ class ProbateApiSampleContractTests(unittest.TestCase):
             with self.subTest(input_shape=input_shape):
                 raw_body = json.dumps(case).encode()
                 engine_result = run_probate_api(case)
-                backend_result = asyncio.run(analyze_lean(raw_body))
+                with patch(
+                    "app.lean_runner.time.perf_counter",
+                    side_effect=[10.0, 10.125],
+                ):
+                    backend_result = asyncio.run(analyze_lean(raw_body))
 
                 self.assertEqual(backend_result.verdict.value, engine_result["verdict"])
                 self.assertIsNone(backend_result.error)
@@ -280,10 +310,10 @@ class ProbateApiSampleContractTests(unittest.TestCase):
                     engine_result["routes"],
                 )
                 self.assertEqual(backend_result.engine, "lean4")
-                self.assertGreater(
+                self.assertEqual(
                     backend_result.latency_ms,
-                    engine_result["latency_ms"],
-                    "backend must replace Lean's placeholder latency with elapsed wall time",
+                    125,
+                    "backend must overwrite Lean's placeholder latency with elapsed wall time",
                 )
                 self.assertIsNotNone(backend_result.usage)
                 self.assertIsNone(backend_result.usage.input_tokens)
