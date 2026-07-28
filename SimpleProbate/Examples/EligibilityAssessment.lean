@@ -138,4 +138,13 @@ example :
     (assessRoutes qualifiedAndUnresolved).map (·.overall) =
       .ok .simplifiedRoutesAvailable := by decide
 
+example :
+    (assessRoutes personalCase.toPartial).map (fun assessment =>
+      assessment.routes.find? (fun report =>
+        report.route == .personalPropertyAffidavit)) =
+    .ok (some {
+      route := .personalPropertyAffidavit
+      status := .qualifies
+    }) := by decide
+
 end SimpleProbate.Examples.EligibilityAssessment

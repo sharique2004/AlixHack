@@ -33,9 +33,89 @@ lake exe simple-probate
   death-date endpoint.
 - `Thresholds`: contains the date-of-death threshold schedule in cents.
 - `Estate`: applies section 13050 exclusions and gross-value aggregation.
-- `Eligibility`: states and decides candidate transfer routes.
+- `Eligibility`: states, decides, and assesses complete or incomplete transfer
+  cases.
 - `Procedure`: checks route-specific packets and exposes ordered workflows.
+- `ProcedureAssessment`: assesses incomplete, route-indexed court packets.
 - `Examples`: compile-checked boundary scenarios and regression theorems.
+
+## Exact partial-case API
+
+The public entry point is:
+
+```lean
+assessRoutes : PartialTransferCase → Except CaseError CaseAssessment
+```
+
+It reports every `SimplifiedRoute` independently in `CaseAssessment.routes`,
+including all direct-transfer bases and the four court routes.  A route status
+is `qualifies` when all its checks are satisfied, `doesNotQualify reasons`
+when a known failure prevents it, or `needsInformation facts` when no known
+failure prevents it but more facts are required.  Known disqualification wins
+over unknown facts; an unknown value is never converted to `false`.
+
+`CaseAssessment.overall` is `simplifiedRoutesAvailable` if any route qualifies,
+`unresolved` if none qualifies but at least one needs information, and
+`formalProbateOrOtherProcedure` only when every simplified route is
+disqualified.  Thus the fallback is not emitted for an unresolved case.
+
+The following example is compile-checked in
+`SimpleProbate/Examples/EligibilityAssessment.lean`:
+
+```lean
+example :
+    (assessRoutes personalCase.toPartial).map (fun assessment =>
+      assessment.routes.find? (fun report =>
+        report.route == .personalPropertyAffidavit)) =
+    .ok (some {
+      route := .personalPropertyAffidavit
+      status := .qualifies
+    }) := by decide
+```
+
+### Valuation and errors
+
+`PartialAsset` carries separate `currentGrossValue` and `dateOfDeathValue`
+fields.  The personal-property affidavit valuation uses current gross value;
+the small-real-property affidavit and primary-residence petition valuations
+use date-of-death value.  The personal-property calculation aggregates all
+qualifying employment compensation before applying its single statutory
+exclusion, rather than applying the exclusion asset by asset.
+
+Assessment returns typed `CaseError`s: `invalidDate`, `afterSnapshot`, or
+`malformedCase issues`.  The last form reports structural problems such as
+duplicate asset IDs, a missing target asset, or incompatible property facts.
+
+### Dependent packet assessment
+
+For court filings, use the dependent packet API:
+
+```lean
+assessPacket : (route : CourtRoute) → PartialProcedureContext →
+  PartialTransferCase → PartialPacket route → Except CaseError ReadinessAssessment
+```
+
+`PartialPacket route` selects the packet structure appropriate to that
+`CourtRoute`; `PartialProcedureContext` supplies facts shared by packet rules.
+Each packet item is `present`, `absent`, or `unknown`.  `absent` is a known
+missing requirement, while `unknown` is unresolved information; the API keeps
+those outcomes distinct in its readiness assessment.
+
+### Proof contracts
+
+For total cases, `assessRoute_ofTotal_qualifies_iff` and
+`assessRoute_ofTotal_disqualified_iff` give positive and negative exactness
+for each route, and `assessRoutes_ofTotal_fallback_iff` gives exact fallback
+semantics.  For partial cases,
+`assessRoute_qualifies_all_completions` proves that a qualifying route remains
+eligible in every well-formed completion, while
+`assessRoute_disqualified_no_completion` proves that a disqualified route has
+no eligible completion.  Packet contracts are
+`assessPacket_ofTotal_ready_iff` (readiness iff for every `CourtRoute`) and
+`assessPacket_ready_all_completions` (partial readiness sound for every
+completion).  The four route-specific
+`*Missing_empty_iff_ready` theorems connect total packet missing lists to
+readiness.
 
 ## 2026 route limits
 
