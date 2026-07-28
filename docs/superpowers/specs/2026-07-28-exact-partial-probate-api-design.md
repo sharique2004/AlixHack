@@ -300,8 +300,9 @@ The public packet function is:
 
 ```lean
 assessPacket :
-  (route : CourtRoute) → PartialTransferCase → PartialPacket route →
-    Except CaseError ReadinessAssessment
+  (route : CourtRoute) → PartialProcedureContext →
+    PartialTransferCase → PartialPacket route →
+      Except CaseError ReadinessAssessment
 ```
 
 `ReadinessAssessment` is:
