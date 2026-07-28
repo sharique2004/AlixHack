@@ -147,7 +147,7 @@ Each asset has one of 14 `treatment` values. Contributions to the three route va
 | treatment | personal-affidavit value | small-value RP value | primary-residence value | direct-transfer basis |
 |---|---|---|---|---|
 | `counted` | gross value¹ | gross if CA real | gross if CA real ∧ primary residence | — |
-| `employment_compensation` | gross − min(gross, exclusion)² | 0 | 0 | — |
+| `employment_compensation` | estate-wide employment remainder after one aggregate exclusion² | 0 | 0 | — |
 | `joint_tenancy` | 0 | 0 | 0 | joint_tenancy |
 | `direct_beneficiary` | 0 | 0 | 0 | named_beneficiary |
 | `revocable_trust` | 0 | 0 | 0 | revocable_trust |
@@ -167,10 +167,11 @@ Each asset has one of 14 `treatment` values. Contributions to the three route va
 Note that **counted California real property does count** toward the personal-affidavit value
 (only the *target* must be personal property for that route).
 
-² Per §13050(c), unpaid employment compensation is excluded **up to** the band's
-employment-compensation exclusion; the remainder counts. The Lean baseline applies the
-`min(gross, exclusion)` subtraction **per asset** — this page mirrors the code as written, not the
-spec's planned aggregate correction.
+² Per §13050(c), qualifying unpaid employment compensation is aggregated
+across the estate. The exact valuation then subtracts
+`min(aggregate employment compensation, exclusion)` once, so only the
+estate-wide remainder above the band's employment-compensation exclusion
+counts.
 
 A treatment with a "—" basis and 0 in all columns (e.g. `registered_vehicle`, `vessel`,
 `registered_home`, `terminable_at_death`, `military_compensation`) is excluded from the valuations
