@@ -130,6 +130,90 @@ private def dateError? (date : Knowledge CivilDate) : Option CaseError :=
       | .error .invalidDate => some .invalidDate
       | .error .afterSnapshot => some .afterSnapshot
 
+def TransferCase.WellFormed (case : TransferCase) : Prop :=
+  (case.estate.assets.map (·.id)).Nodup ∧
+  (∃ target ∈ case.estate.assets, target.id = case.targetId) ∧
+  ∀ asset ∈ case.estate.assets,
+    (asset.isPrimaryResidence = true →
+      asset.kind = .californiaReal) ∧
+    (asset.includedInPrimaryResidencePetition = true →
+      asset.kind = .californiaReal ∧
+      asset.isPrimaryResidence = true)
+
+instance (case : TransferCase) : Decidable case.WellFormed := by
+  unfold TransferCase.WellFormed
+  infer_instance
+
+private def Knowledge.value? : Knowledge α → Option α
+  | .unknown => none
+  | .known value => some value
+
+private def PartialAsset.toTotal? (asset : PartialAsset) : Option Asset := do
+  let kind ← asset.kind.value?
+  let currentGrossValue ← asset.currentGrossValue.value?
+  let dateOfDeathValue ← asset.dateOfDeathValue.value?
+  let encumbrances ← asset.encumbrances.value?
+  let treatment ← asset.treatment.value?
+  let includedInPrimaryResidencePetition ←
+    asset.includedInPrimaryResidencePetition.value?
+  let isPrimaryResidence ← asset.isPrimaryResidence.value?
+  pure {
+    id := asset.id
+    name := asset.name
+    kind
+    currentGrossValue
+    dateOfDeathValue
+    encumbrances
+    treatment
+    includedInPrimaryResidencePetition
+    isPrimaryResidence
+  }
+
+private def partialAssetsToTotal? : List PartialAsset → Option (List Asset)
+  | [] => some []
+  | asset :: rest => do
+      let totalAsset ← asset.toTotal?
+      let totalRest ← partialAssetsToTotal? rest
+      pure (totalAsset :: totalRest)
+
+private def PartialEstate.toTotal? (estate : PartialEstate) : Option Estate := do
+  let inventoryComplete ← estate.inventoryComplete.value?
+  if inventoryComplete then
+    let assets ← partialAssetsToTotal? estate.assets
+    pure { assets }
+  else
+    none
+
+private def PartialTransferCase.toTotal?
+    (case : PartialTransferCase) : Option TransferCase := do
+  let deathDate ← case.deathDate.value?
+  let estate ← case.estate.toTotal?
+  let targetId ← case.targetId.value?
+  let authority ← case.authority.value?
+  let daysSinceDeath ← case.daysSinceDeath.value?
+  let sixMonthsElapsed ← case.sixMonthsElapsed.value?
+  let claimantIsSuccessor ← case.claimantIsSuccessor.value?
+  let noSuperiorRight ← case.noSuperiorRight.value?
+  let funeralLastIllnessAndUnsecuredDebtsPaid ←
+    case.funeralLastIllnessAndUnsecuredDebtsPaid.value?
+  let survivorStatus ← case.survivorStatus.value?
+  let propertyPassesToSurvivor ← case.propertyPassesToSurvivor.value?
+  let propertyBelongsToSurvivor ← case.propertyBelongsToSurvivor.value?
+  pure {
+    deathDate
+    estate
+    targetId
+    authority
+    daysSinceDeath
+    sixMonthsElapsed
+    claimantIsSuccessor
+    noSuperiorRight
+    funeralLastIllnessAndUnsecuredDebtsPaid
+    survivorStatus
+    propertyPassesToSurvivor
+    propertyBelongsToSurvivor
+  }
+
 def validatePartialCase (partialCase : PartialTransferCase) : Except CaseError Unit :=
   match dateError? partialCase.deathDate with
   | some error => .error error
@@ -146,7 +230,12 @@ def validatePartialCase (partialCase : PartialTransferCase) : Except CaseError U
         | _, _ => []
       let assetIssues := partialCase.estate.assets.flatMap assetStructuralIssues
       let issues := duplicateIssues ++ targetIssues ++ assetIssues
-      if issues = [] then .ok () else .error (.malformedCase issues)
+      match partialCase.toTotal? with
+      | some total =>
+          if total.WellFormed then .ok ()
+          else .error (.malformedCase issues)
+      | none =>
+          if issues = [] then .ok () else .error (.malformedCase issues)
 
 def TransferCase.toPartial (case : TransferCase) : PartialTransferCase := {
   deathDate := .known case.deathDate
@@ -164,19 +253,47 @@ def TransferCase.toPartial (case : TransferCase) : PartialTransferCase := {
   propertyBelongsToSurvivor := .known case.propertyBelongsToSurvivor
 }
 
-def TransferCase.WellFormed (case : TransferCase) : Prop :=
-  (case.estate.assets.map (·.id)).Nodup ∧
-  (∃ target ∈ case.estate.assets, target.id = case.targetId) ∧
-  ∀ asset ∈ case.estate.assets,
-    (asset.isPrimaryResidence = true →
-      asset.kind = .californiaReal) ∧
-    (asset.includedInPrimaryResidencePetition = true →
-      asset.kind = .californiaReal ∧
-      asset.isPrimaryResidence = true)
+@[simp] private theorem partialAsset_toTotal_ofTotal
+    (asset : Asset) :
+    (PartialAsset.ofTotal asset).toTotal? = some asset := by
+  cases asset
+  rfl
 
-instance (case : TransferCase) : Decidable case.WellFormed := by
-  unfold TransferCase.WellFormed
-  infer_instance
+@[simp] private theorem partialAssetsToTotal_ofTotal
+    (assets : List Asset) :
+    partialAssetsToTotal? (assets.map PartialAsset.ofTotal) = some assets := by
+  induction assets with
+  | nil => rfl
+  | cons head tail =>
+      simp [partialAssetsToTotal?, *]
+
+@[simp] private theorem partialEstate_toTotal_ofTotal
+    (estate : Estate) :
+    (PartialEstate.ofTotal estate).toTotal? = some estate := by
+  cases estate
+  simp [PartialEstate.ofTotal, PartialEstate.toTotal?,
+    Knowledge.value?]
+
+@[simp] private theorem partialCase_toTotal_ofTotal
+    (case : TransferCase) :
+    case.toPartial.toTotal? = some case := by
+  cases case
+  simp [TransferCase.toPartial, PartialTransferCase.toTotal?,
+    Knowledge.value?]
+
+theorem validatePartialCase_toPartial_ok_iff
+    (case : TransferCase) :
+    validatePartialCase case.toPartial = .ok () ↔
+      (∃ band, classifyDeathDate case.deathDate = .ok band) ∧
+      case.WellFormed := by
+  unfold validatePartialCase
+  rw [partialCase_toTotal_ofTotal]
+  cases dateResult : classifyDeathDate case.deathDate with
+  | error error =>
+      cases error <;>
+        simp [TransferCase.toPartial, dateError?, dateResult]
+  | ok band =>
+      simp [TransferCase.toPartial, dateError?, dateResult]
 
 theorem toPartial_completes (case : TransferCase) :
     case.toPartial.Completes case := by

@@ -135,11 +135,23 @@ def malformedEmptyEstateRealCase : TransferCase := {
 
 example :
     routeEligible malformedEmptyEstateRealCase
-      .smallValueRealPropertyAffidavit = .ok false := by decide
+      .smallValueRealPropertyAffidavit =
+        .error (.malformedCase [
+          .missingTargetAsset millionDollarRealTarget.id
+        ]) := by decide
 
 example :
     routeEligible malformedEmptyEstateRealCase
-      .primaryResidencePetition = .ok false := by decide
+      .primaryResidencePetition =
+        .error (.malformedCase [
+          .missingTargetAsset millionDollarRealTarget.id
+        ]) := by decide
+
+example :
+    candidateRoutes malformedEmptyEstateRealCase =
+      .error (.malformedCase [
+        .missingTargetAsset millionDollarRealTarget.id
+      ]) := by decide
 
 example : routeEligible { base2026Case with
     estate := { assets := [spousalTarget] }
@@ -334,7 +346,10 @@ example : routeEligible { base2026Case with
         isPrimaryResidence := false
     }] }
     targetId := primaryResidenceTarget.id }
-    .primaryResidencePetition = .ok false := by decide
+    .primaryResidencePetition =
+      .error (.malformedCase [
+        .petitionAssetNotPrimaryResidence primaryResidenceTarget.id
+      ]) := by decide
 
 example :
     routeEligible { base2026Case with authority := .noProceeding }

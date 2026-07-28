@@ -105,17 +105,10 @@ def simplifiedRoutes : List SimplifiedRoute :=
 def TransferCase.target? (case : TransferCase) : Option Asset :=
   case.estate.findAsset? case.targetId
 
-private def TransferCase.Valid (case : TransferCase) : Prop :=
-  validatePartialCase case.toPartial = .ok ()
-
-private instance (case : TransferCase) : Decidable case.Valid := by
-  unfold TransferCase.Valid
-  infer_instance
-
 def DirectTransferEligible
     (case : TransferCase) (basis : DirectTransferBasis) : Prop :=
   SupportedDeathDate case.deathDate ∧
-  case.Valid ∧
+  case.WellFormed ∧
   ∃ target, case.target? = some target ∧
     target.directTransferBasis = some basis
 
@@ -123,7 +116,7 @@ def PersonalPropertyAffidavitEligible (case : TransferCase) : Prop :=
   match case.target? with
   | some target =>
       SupportedDeathDate case.deathDate ∧
-      case.Valid ∧
+      case.WellFormed ∧
       target.kind = .personal ∧
       case.claimantIsSuccessor = true ∧
       case.noSuperiorRight = true ∧
@@ -140,7 +133,7 @@ def SmallValueRealPropertyAffidavitEligible (case : TransferCase) : Prop :=
   match case.target? with
   | some target =>
       SupportedDeathDate case.deathDate ∧
-      case.Valid ∧
+      case.WellFormed ∧
       target.kind = .californiaReal ∧
       target.treatment = .counted ∧
       case.claimantIsSuccessor = true ∧
@@ -159,7 +152,7 @@ def PrimaryResidencePetitionEligible (case : TransferCase) : Prop :=
   match case.target? with
   | some target =>
       SupportedDeathDate case.deathDate ∧
-      case.Valid ∧
+      case.WellFormed ∧
       target.kind = .californiaReal ∧
       target.treatment = .counted ∧
       target.isPrimaryResidence = true ∧
@@ -175,7 +168,7 @@ def PrimaryResidencePetitionEligible (case : TransferCase) : Prop :=
 
 def SpousalPropertyPetitionEligible (case : TransferCase) : Prop :=
   SupportedDeathDate case.deathDate ∧
-  case.Valid ∧
+  case.WellFormed ∧
   case.target? ≠ none ∧
   case.survivorStatus ≠ .none ∧
   (case.propertyPassesToSurvivor = true ∨
@@ -183,7 +176,7 @@ def SpousalPropertyPetitionEligible (case : TransferCase) : Prop :=
 
 instance (case : TransferCase) (basis : DirectTransferBasis) :
     Decidable (DirectTransferEligible case basis) := by
-  unfold DirectTransferEligible TransferCase.Valid TransferCase.target?
+  unfold DirectTransferEligible TransferCase.target?
   infer_instance
 
 instance (case : TransferCase) :
@@ -215,6 +208,14 @@ instance (case : TransferCase) :
   unfold SpousalPropertyPetitionEligible
   infer_instance
 
+theorem validatePartialCase_toPartial_ok_iff_supported
+    (case : TransferCase) :
+    validatePartialCase case.toPartial = .ok () ↔
+      SupportedDeathDate case.deathDate ∧ case.WellFormed := by
+  rw [validatePartialCase_toPartial_ok_iff]
+  cases dateResult : classifyDeathDate case.deathDate <;>
+    simp [SupportedDeathDate, dateResult]
+
 private def routeEligibleNonFallback (case : TransferCase) : Route → Bool
   | .directTransfer basis => decide (DirectTransferEligible case basis)
   | .personalPropertyAffidavit =>
@@ -235,6 +236,13 @@ private def nonFallbackRoutes (case : TransferCase) : List Route :=
       .spousalPropertyPetition] : List Route)
   ).filter (routeEligibleNonFallback case)
 
+/--
+Declarative eligibility for the stable, non-fallback route API.
+
+Legacy callers using `Route` should use `LegacyRouteEligible`; for every
+`SimplifiedRoute`, `legacyRouteEligible_toRoute_iff` proves the two
+declarative views coincide.
+-/
 def RouteEligible (case : TransferCase) : SimplifiedRoute → Prop
   | .directTransfer basis => DirectTransferEligible case basis
   | .personalPropertyAffidavit => PersonalPropertyAffidavitEligible case
@@ -250,6 +258,44 @@ instance (case : TransferCase) (route : SimplifiedRoute) :
     simp only [RouteEligible] <;>
     infer_instance
 
+private theorem RouteEligible.supportedAndWellFormed
+    {case : TransferCase} {route : SimplifiedRoute}
+    (eligible : RouteEligible case route) :
+    SupportedDeathDate case.deathDate ∧ case.WellFormed := by
+  cases route with
+  | directTransfer basis =>
+      exact ⟨eligible.1, eligible.2.1⟩
+  | personalPropertyAffidavit =>
+      cases targetResult : case.target? with
+      | none =>
+          simp [RouteEligible, PersonalPropertyAffidavitEligible,
+            targetResult] at eligible
+      | some target =>
+          simp only [RouteEligible, PersonalPropertyAffidavitEligible,
+            targetResult] at eligible
+          exact ⟨eligible.1, eligible.2.1⟩
+  | smallValueRealPropertyAffidavit =>
+      cases targetResult : case.target? with
+      | none =>
+          simp [RouteEligible, SmallValueRealPropertyAffidavitEligible,
+            targetResult] at eligible
+      | some target =>
+          simp only [RouteEligible,
+            SmallValueRealPropertyAffidavitEligible,
+            targetResult] at eligible
+          exact ⟨eligible.1, eligible.2.1⟩
+  | primaryResidencePetition =>
+      cases targetResult : case.target? with
+      | none =>
+          simp [RouteEligible, PrimaryResidencePetitionEligible,
+            targetResult] at eligible
+      | some target =>
+          simp only [RouteEligible, PrimaryResidencePetitionEligible,
+            targetResult] at eligible
+          exact ⟨eligible.1, eligible.2.1⟩
+  | spousalPropertyPetition =>
+      exact ⟨eligible.1, eligible.2.1⟩
+
 def LegacyRouteEligible (case : TransferCase) : Route → Prop
   | .directTransfer basis => DirectTransferEligible case basis
   | .personalPropertyAffidavit => PersonalPropertyAffidavitEligible case
@@ -259,7 +305,9 @@ def LegacyRouteEligible (case : TransferCase) : Route → Prop
       PrimaryResidencePetitionEligible case
   | .spousalPropertyPetition => SpousalPropertyPetitionEligible case
   | .formalProbateOrOtherProcedure =>
-      SupportedDeathDate case.deathDate ∧ nonFallbackRoutes case = []
+      SupportedDeathDate case.deathDate ∧
+      case.WellFormed ∧
+      nonFallbackRoutes case = []
 
 instance (case : TransferCase) (route : Route) :
     Decidable (LegacyRouteEligible case route) := by
@@ -267,29 +315,33 @@ instance (case : TransferCase) (route : Route) :
     simp only [LegacyRouteEligible] <;>
     infer_instance
 
+theorem legacyRouteEligible_toRoute_iff
+    (case : TransferCase) (route : SimplifiedRoute) :
+    LegacyRouteEligible case route.toRoute ↔ RouteEligible case route := by
+  cases route <;> rfl
+
 private def candidateRoutesUnchecked (case : TransferCase) : List Route :=
   if nonFallbackRoutes case = [] then
     [.formalProbateOrOtherProcedure]
   else
     nonFallbackRoutes case
 
-def candidateRoutes (case : TransferCase) : Except DateError (List Route) :=
-  match classifyDeathDate case.deathDate with
-  | .ok _ => .ok (candidateRoutesUnchecked case)
-  | .error error => .error error
+def candidateRoutes (case : TransferCase) : Except CaseError (List Route) := do
+  validatePartialCase case.toPartial
+  pure (candidateRoutesUnchecked case)
 
 private def routeEligibleUnchecked (case : TransferCase) (route : Route) : Bool :=
   decide (LegacyRouteEligible case route)
 
 def routeEligible
-    (case : TransferCase) (route : Route) : Except DateError Bool :=
-  match classifyDeathDate case.deathDate with
-  | .ok _ => .ok (routeEligibleUnchecked case route)
-  | .error error => .error error
+    (case : TransferCase) (route : Route) : Except CaseError Bool := do
+  validatePartialCase case.toPartial
+  pure (routeEligibleUnchecked case route)
 
 private theorem candidateRoutesUnchecked_sound
     {case : TransferCase} {route : Route}
     (supportedDate : SupportedDeathDate case.deathDate)
+    (wellFormed : case.WellFormed)
     (membership : route ∈ candidateRoutesUnchecked case) :
     LegacyRouteEligible case route := by
   unfold candidateRoutesUnchecked at membership
@@ -298,7 +350,7 @@ private theorem candidateRoutesUnchecked_sound
     have routeIsFallback : route = .formalProbateOrOtherProcedure := by
       simpa using membership
     subst route
-    exact ⟨supportedDate, noRoutes⟩
+    exact ⟨supportedDate, wellFormed, noRoutes⟩
   next someRoute =>
     have eligibleCheck :
         routeEligibleNonFallback case route = true :=
@@ -313,17 +365,19 @@ theorem candidateRoutes_sound
     (membership : route ∈ routes) :
     LegacyRouteEligible case route := by
   unfold candidateRoutes at result
-  cases dateResult : classifyDeathDate case.deathDate with
-  | error _ =>
-      rw [dateResult] at result
+  cases validation : validatePartialCase case.toPartial with
+  | error error =>
+      rw [validation] at result
       contradiction
-  | ok _ =>
-      rw [dateResult] at result
-      have supportedDate : SupportedDeathDate case.deathDate := by
-        simp [SupportedDeathDate, dateResult]
+  | ok unitValue =>
+      cases unitValue
+      rw [validation] at result
+      have valid :
+          SupportedDeathDate case.deathDate ∧ case.WellFormed :=
+        (validatePartialCase_toPartial_ok_iff_supported case).mp validation
       injection result with routesEq
       subst routes
-      exact candidateRoutesUnchecked_sound supportedDate membership
+      exact candidateRoutesUnchecked_sound valid.1 valid.2 membership
 
 def checkKnowledge
     (fact : EligibilityFact) (failure : EligibilityFailure)
@@ -639,12 +693,7 @@ def eligibilityChecks
     Except CaseError
       (List (CheckResult EligibilityFact EligibilityFailure)) :=
   match validatePartialCase case with
-  | .error .invalidDate =>
-      .ok [.unknown .deathDate, .unknown .targetAsset]
-  | .error .afterSnapshot =>
-      .ok [.unknown .deathDate, .unknown .targetAsset]
-  | .error (.malformedCase _) =>
-      .ok [.unknown .deathDate, .unknown .targetAsset]
+  | .error error => .error error
   | .ok _ =>
       let resolved := targetResolution case
       let baseChecks := [deathDateCheck case.deathDate, resolved.1]
@@ -658,15 +707,12 @@ def eligibilityChecks
             primaryResidenceChecks case resolved.2
         | .spousalPropertyPetition => spousalChecks case
 
-private theorem eligibilityChecks_always_ok
+private theorem eligibilityChecks_ok_of_validate
     (case : PartialTransferCase) (route : SimplifiedRoute) :
-    ∃ checks, eligibilityChecks case route = .ok checks := by
-  unfold eligibilityChecks
-  cases validation : validatePartialCase case with
-  | error error => cases error <;> simp
-  | ok unitValue =>
-      cases unitValue
-      simp
+    validatePartialCase case = .ok () →
+      ∃ checks, eligibilityChecks case route = .ok checks := by
+  intro valid
+  simp [eligibilityChecks, valid]
 
 def assessRoute
     (case : PartialTransferCase) (route : SimplifiedRoute) :
@@ -720,27 +766,30 @@ private theorem find?_map_of_pointwise
 
 theorem eligibilityChecks_ofTotal_all_satisfied_iff
     (case : TransferCase) (route : SimplifiedRoute) :
-    (∀ checks,
-      eligibilityChecks case.toPartial route = .ok checks →
-      (∀ check ∈ checks, check = .satisfied)) ↔
+    (∃ checks,
+      eligibilityChecks case.toPartial route = .ok checks ∧
+      ∀ check ∈ checks, check = .satisfied) ↔
     RouteEligible case route := by
   cases validation : validatePartialCase case.toPartial with
   | error error =>
-      have notValid : ¬case.Valid := by
-        simp [TransferCase.Valid, validation]
-      simp only [eligibilityChecks, validation]
-      cases targetResult : case.target? <;>
-        cases error <;> cases route <;>
-        simp [RouteEligible, DirectTransferEligible,
-          PersonalPropertyAffidavitEligible,
-          SmallValueRealPropertyAffidavitEligible,
-          PrimaryResidencePetitionEligible,
-          SpousalPropertyPetitionEligible,
-          notValid, targetResult]
+      have invalid :
+          ¬(SupportedDeathDate case.deathDate ∧ case.WellFormed) := by
+        intro valid
+        have ok :=
+          (validatePartialCase_toPartial_ok_iff_supported case).mpr valid
+        rw [validation] at ok
+        contradiction
+      constructor
+      · rintro ⟨checks, checksResult, allSatisfied⟩
+        simp [eligibilityChecks, validation] at checksResult
+      · intro eligible
+        exfalso
+        exact invalid eligible.supportedAndWellFormed
   | ok unitValue =>
       cases unitValue
-      have caseValid : case.Valid := by
-        exact validation
+      have wellFormed : case.WellFormed :=
+        ((validatePartialCase_toPartial_ok_iff_supported case).mp
+          validation).2
       simp only [eligibilityChecks, validation]
       cases route <;>
         cases dateResult : classifyDeathDate case.deathDate <;>
@@ -751,7 +800,7 @@ theorem eligibilityChecks_ofTotal_all_satisfied_iff
           SmallValueRealPropertyAffidavitEligible,
           PrimaryResidencePetitionEligible,
           SpousalPropertyPetitionEligible,
-          caseValid, TransferCase.target?,
+          wellFormed, TransferCase.target?,
           TransferCase.toPartial,
           targetResolution, deathDateCheck, directTransferChecks,
           personalChecks, smallRealChecks, primaryResidenceChecks,
@@ -776,26 +825,13 @@ theorem assessRoute_ofTotal_qualifies_iff
     assessRoute case.toPartial route = .ok .qualifies ↔
       RouteEligible case route := by
   rw [← eligibilityChecks_ofTotal_all_satisfied_iff]
-  obtain ⟨checks, checksResult⟩ :=
-    eligibilityChecks_always_ok case.toPartial route
   cases validation : validatePartialCase case.toPartial with
   | error error =>
-      constructor
-      · intro impossible
-        simp [assessRoute, validation] at impossible
-      · intro allSatisfied
-        have bad := allSatisfied
-          ([
-            .unknown .deathDate,
-            .unknown .targetAsset
-          ] : List (CheckResult EligibilityFact EligibilityFailure))
-          (by cases error <;>
-            simp [eligibilityChecks, validation])
-          (.unknown .deathDate)
-          (by simp)
-        contradiction
+      simp [assessRoute, eligibilityChecks, validation]
   | ok unitValue =>
       cases unitValue
+      obtain ⟨checks, checksResult⟩ :=
+        eligibilityChecks_ok_of_validate case.toPartial route validation
       simp [assessRoute, validation, checksResult,
         aggregateChecks_qualifies_iff]
 
@@ -862,7 +898,7 @@ theorem assessRoute_ofTotal_disqualified_iff
       ¬ RouteEligible case route := by
   rw [← assessRoute_ofTotal_qualifies_iff]
   obtain ⟨checks, checksResult⟩ :=
-    eligibilityChecks_always_ok case.toPartial route
+    eligibilityChecks_ok_of_validate case.toPartial route valid
   cases result : assessRoute case.toPartial route with
   | error error =>
       simp [assessRoute, valid, checksResult] at result

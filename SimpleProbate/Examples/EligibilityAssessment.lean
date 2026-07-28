@@ -47,4 +47,26 @@ example :
   exact assessRoute_ofTotal_qualifies_iff personalCase
     .personalPropertyAffidavit
 
+def invalidDateCase : TransferCase := {
+  personalCase with
+  deathDate := ⟨2026, 2, 29⟩
+}
+
+example :
+    eligibilityChecks invalidDateCase.toPartial
+      .personalPropertyAffidavit =
+        .error .invalidDate := by decide
+
+def missingTargetCase : TransferCase := {
+  personalCase with
+  estate := { assets := [] }
+}
+
+example :
+    eligibilityChecks missingTargetCase.toPartial
+      .personalPropertyAffidavit =
+        .error (.malformedCase [
+          .missingTargetAsset personalCase.targetId
+        ]) := by decide
+
 end SimpleProbate.Examples.EligibilityAssessment
