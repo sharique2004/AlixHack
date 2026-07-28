@@ -1,0 +1,10 @@
+name = "simple-probate"
+version = "0.1.0"
+defaultTargets = ["simple-probate"]
+
+[[lean_lib]]
+name = "SimpleProbate"
+
+[[lean_exe]]
+name = "simple-probate"
+root = "Main"
