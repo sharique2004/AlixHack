@@ -395,7 +395,7 @@ it.
 Continue `SimpleProbate/Estate.lean` with:
 
 ```lean
-def Asset.personalAffidavitValue
+def Asset.personalAffidavitContribution
     (thresholds : Thresholds) (asset : Asset) : Money :=
   if asset.kind == .outsideCaliforniaReal ||
       asset.includedInPrimaryResidencePetition then
@@ -411,7 +411,7 @@ def Estate.personalAffidavitValue
     (estate : Estate) (date : CivilDate) : Except DateError Money := do
   let thresholds ← thresholdsFor date
   pure <| estate.assets.foldl
-    (fun total asset => total + asset.personalAffidavitValue thresholds) 0
+    (fun total asset => total + asset.personalAffidavitContribution thresholds) 0
 
 def Asset.countedCaliforniaRealValue (asset : Asset) : Money :=
   if asset.kind == .californiaReal && asset.treatment == .counted then
@@ -1500,7 +1500,7 @@ The spousal property petition has no value cap in this model.
 | Lean definition | Official source |
 | --- | --- |
 | `thresholdsFor`, `thresholdsForBand` | Probate Code §890 and Judicial Council form DE-300 |
-| `Asset.personalAffidavitValue` | Probate Code §§13050 and 13100 |
+| `Estate.personalAffidavitValue` | Probate Code §§13050 and 13100 |
 | `PersonalPropertyAffidavitEligible` | Probate Code §§13100–13101 |
 | `SmallValueRealPropertyAffidavitEligible` | Probate Code §13200 and form DE-305 |
 | `PrimaryResidencePetitionEligible` | Probate Code §§13150–13154 and forms DE-310/DE-315 |

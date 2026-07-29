@@ -1,24 +1,32 @@
-# sample_cases.json — per-route derivations (reviewer notes)
+# sample_cases.json — exact-engine execution notes
 
-Hand-execution of `AlixHack/SimpleProbate/{Eligibility,Estate,Thresholds,Date}.lean` over each case,
-with the contract's partial-info aggregation (violation > unknown > satisfied; overall: any
-qualifies → ELIGIBLE, else any needs_information → INCOMPLETE_INFO, else OTHER_FORM_REQUIRED).
+The expected top-level verdicts below were recorded by running every fixture
+through `lake exe probate-api`. The adapter decodes the wire case into typed
+exact facts and failures, and `Api.lean` projects its eleven exact route
+reports to the six demo rows. The explanatory notes summarize that executed
+result; they are not a second rule evaluator. Aggregation is a known failure
+before an unknown fact before satisfaction; overall, any qualifying route wins,
+then unresolved information, then the formal-procedure fallback.
 Route abbreviations: DT direct_transfer, PPA personal_property_affidavit, SV
 small_value_real_property_affidavit, PR primary_residence_petition, SP spousal_property_petition,
 FP formal_probate_or_other_procedure. Caps in cents: PPA band1 16,625,000 / band2 18,450,000 /
 band3 20,885,000; SV band3 6,962,500; PR band3 75,000,000. All cases: valid target_index ⇒
 WellFormed holds (targetIsPartOfEstate := true).
 
-Notable code facts used: `Asset.personalAffidavitValue` counts `counted` assets of ANY kind except
+Notable code facts used: `Estate.personalAffidavitValue` counts `counted` assets of ANY kind except
 outside-CA real and included-in-petition; treatments other than counted/employment_compensation
 contribute 0. `smallValueRealPropertyValue` sums counted CA-real only. `primaryResidenceValue` sums
 counted CA-real primary-residence only. PR route has no no_superior_right conjunct; SP has no cap
 and no wait; DT looks only at the TARGET's treatment.
 
+The adapter preserves legacy-only fixtures but reports exact missing value facts
+as `estate.assets[n].current_gross_value_cents` for current-value questions
+and `estate.assets[n].date_of_death_value_cents` for date-at-death questions.
+
 ## 1. eligible-personal-affidavit → ELIGIBLE
 - DT: target treatment counted ⇒ no basis ⇒ does_not_qualify.
 - PPA: kind personal ✓, successor ✓, no_superior ✓, 444 ≥ 40 ✓, no_proceeding permits ✓,
-  inventory known-true ✓, value 5,000,000+3,000,000 = 8,000,000 ≤ 20,885,000 (band3) ⇒ **qualifies**.
+  inventory known-true ✓, current value 5,200,000+3,000,000 = 8,200,000 ≤ 20,885,000 (band3) ⇒ **qualifies**.
 - SV: target kind personal ≠ california_real ⇒ does_not_qualify.
 - PR: target kind personal / not primary residence ⇒ does_not_qualify.
 - SP: survivor_status none ⇒ does_not_qualify.
@@ -45,9 +53,9 @@ and no wait; DT looks only at the TARGET's treatment.
 
 ## 4. needs-info-unknown-value → INCOMPLETE_INFO
 - DT: target (Vanguard, counted) ⇒ does_not_qualify.
-- PPA: all non-value conjuncts satisfied; assets[0] is counted with gross_value_cents null ⇒ total
+- PPA: all non-value conjuncts satisfied; assets[0] is counted with its current value unknown ⇒ total
   unknown; known subtotal 3,000,000 not over cap ⇒ **needs_information**
-  (estate.assets[0].gross_value_cents).
+  (estate.assets[0].current_gross_value_cents).
 - SV/PR: target kind personal ⇒ does_not_qualify (known violation beats the unknown value).
 - SP: survivor none ⇒ does_not_qualify.
 - FP: PPA unresolved, none qualifies ⇒ needs_information (fallback suppressed).
@@ -72,7 +80,7 @@ and no wait; DT looks only at the TARGET's treatment.
 ## 7. over-cap-despite-unknowns → OTHER_FORM_REQUIRED
 - DT: target counted ⇒ does_not_qualify.
 - PPA: known counted subtotal 15,000,000+9,000,000 = 24,000,000 > 20,885,000 (band3) ⇒ violated even
-  though assets[2] value is unknown ⇒ **does_not_qualify** (violation beats unknown).
+  though assets[2].current_gross_value_cents is unknown ⇒ **does_not_qualify** (violation beats unknown).
 - SV: target kind personal ⇒ does_not_qualify. PR: same. SP: survivor none ⇒ does_not_qualify.
 - FP: all five simplified routes conclusively does_not_qualify ⇒ **qualifies** ⇒ OTHER_FORM_REQUIRED.
 

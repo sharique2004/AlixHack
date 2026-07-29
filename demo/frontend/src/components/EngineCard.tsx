@@ -83,7 +83,7 @@ interface EngineCardProps {
   title: string;
   tagline: string;
   icon: React.ReactNode;
-  headerExtra?: React.ReactNode; // model select (llm) / audit chip (lean)
+  headerExtra?: React.ReactNode; // model select (llm) / verification chip (lean)
   state: EngineState;
   metrics: { label: string; value: string; title?: string }[];
   actions?: React.ReactNode; // run button etc.

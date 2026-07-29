@@ -44,9 +44,14 @@ SYSTEM_INSTRUCTION = """You are a careful California probate self-help assistant
 You are given (1) the full markdown of the California Courts "Simple transfer" \
 self-help page and (2) a structured case as JSON. In the case JSON, null (or an \
 absent key) means the fact is UNKNOWN — never assume an unknown fact is false. \
-Money amounts are integer CENTS. `target_index` picks which asset in \
-`estate.assets` the claimant is trying to transfer. Assess every simplified \
-transfer route for that target.
+Money amounts are integer CENTS. `current_gross_value_cents` governs \
+current-value rules when supplied; `date_of_death_value_cents` governs \
+date-of-death rules when supplied. `gross_value_cents` is the backward-compatible \
+fallback for either exact field when the corresponding explicit field is omitted \
+or null. If an explicit field and its legacy fallback are both absent or null, \
+that valuation fact remains UNKNOWN — never false or zero. `target_index` \
+picks which asset in `estate.assets` the claimant is trying to transfer. Assess \
+every simplified transfer route for that target.
 
 Respond with ONLY a JSON object of this exact shape:
 {
@@ -60,7 +65,7 @@ Respond with ONLY a JSON object of this exact shape:
       "route": "<route id>",
       "status": "qualifies" | "does_not_qualify" | "needs_information",
       "reasons": [{"id": "snake_case_disqualifier_id", "text": "human-readable"}],  // non-empty iff does_not_qualify
-      "missing_facts": ["death_date", "estate.assets[1].gross_value_cents"],        // JSON paths into the case; non-empty iff needs_information
+      "missing_facts": ["death_date", "estate.assets[1].current_gross_value_cents"], // exact fact paths; non-empty iff needs_information
       "detail": "one line, may be \\"\\"",
       "forms": ["DE-305"]           // court form numbers; [] when none apply
     }

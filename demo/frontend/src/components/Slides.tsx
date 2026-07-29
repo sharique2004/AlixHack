@@ -105,19 +105,17 @@ export function Slides({ onClose }: SlidesProps) {
                 misses facts.
               </li>
               <li>
-                <strong>It fills the gaps.</strong> When a fact is unknown, the model
-                assumes the favorable answer. In our audit it called a case
-                <em> eligible</em> while the date of death was still unknown.
+                <strong>Unknowns need an explicit contract.</strong> Missing facts must stay
+                unresolved instead of being replaced with plausible assumptions.
               </li>
               <li>
-                <strong>You pay for every question, and answers wobble.</strong> Around 15
-                seconds, 8,000 tokens and a cent or three per case, and only{" "}
-                <strong>23 of 36 runs</strong> matched the verified answer.
+                <strong>Every question is a fresh inference.</strong> You pay the latency,
+                token cost, and dollars again, and sampling can change the answer.
               </li>
             </ul>
             <p className="slide-foot">
-              Audit method: 3 independent runs on each of 12 cases, graded against the
-              statute. Full write-up in AUDIT.md.
+              The live comparison reports time, tokens, and estimated cost for the current
+              case.
             </p>
           </div>
         )}
@@ -129,16 +127,17 @@ export function Slides({ onClose }: SlidesProps) {
             <PipelineCompiled />
             <ul className="slide-points">
               <li>
-                <strong>Deterministic.</strong> Same input, same answer, every time.{" "}
-                <strong>12 out of 12</strong> on the same audit.
+                <strong>Deterministic.</strong> The same typed input executes the same
+                decision procedure every time.
               </li>
               <li>
-                <strong>Verified.</strong> Checked against the statutory predicates on{" "}
-                <strong>435,456 cases</strong> with zero mismatches.
+                <strong>Verified.</strong> Total-case exactness and partial-completion
+                soundness are theorem-backed. The executable suite covers all 12 shipped
+                samples.
               </li>
               <li>
-                <strong>Instant and nearly free.</strong> About 20 ms of compute and half
-                a millionth of a dollar per case. Zero tokens.
+                <strong>No inference tokens.</strong> Each answer runs the compiled engine,
+                and the panel measures its runtime live.
               </li>
               <li>
                 <strong>Honest about its limits.</strong> It refuses dates beyond its

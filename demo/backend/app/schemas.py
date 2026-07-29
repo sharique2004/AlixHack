@@ -1,16 +1,15 @@
 """Pydantic v2 models mirroring CONTRACT.md (v2).
 
-`CaseInput` mirrors `SimpleProbate.TransferCase` through the vendored Lean
-repo's partial-information layer: EVERY fact field is nullable, and null (or an
-absent key) means UNKNOWN — never false. Money is integer cents. Enums are
-strict: a value that is present but outside the contract's enum is a schema
-violation (HTTP 422).
+`CaseInput` mirrors the exact theorem-backed `SimpleProbate` API: EVERY fact
+field is nullable, and null (or an absent key) means UNKNOWN — never false.
+Money is integer cents. Enums are strict: a value that is present but outside
+the contract's enum is a schema violation (HTTP 422).
 
 Semantics beyond wire shape (civil-date validity, the 2026-12-31 snapshot end,
-target_index range, negative money, route aggregation) are the Lean engine's
-job — it reports them as a top-level `error` object, not an HTTP error. These
-models are only the validation gate; the raw request body is forwarded to the
-engines exactly as received so nulls stay intact.
+target_index range, negative money, valuation precedence, route aggregation)
+are the Lean adapter's job — it reports them as a top-level `error` object,
+not an HTTP error. These models are only the validation gate; the raw request
+body is forwarded to the engines exactly as received so nulls stay intact.
 """
 
 from __future__ import annotations
@@ -120,9 +119,14 @@ class CivilDate(BaseModel):
 
 
 class Asset(BaseModel):
-    name: str  # required, unique within the list (uniqueness checked by Lean)
+    name: str  # display label; duplicates allowed (the adapter generates AssetId)
     kind: Optional[AssetKind] = None
     gross_value_cents: Optional[int] = None  # negative ⇒ Lean malformed_case
+    # The Lean adapter, not Pydantic, selects explicit values before this
+    # legacy fallback: current_gross_value_cents for current-value rules and
+    # date_of_death_value_cents for date-at-death rules.
+    current_gross_value_cents: Optional[int] = None
+    date_of_death_value_cents: Optional[int] = None
     encumbrances_cents: Optional[int] = None  # never reduces eligibility values
     treatment: Optional[ValuationTreatment] = None
     included_in_primary_residence_petition: Optional[bool] = None

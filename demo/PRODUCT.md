@@ -70,11 +70,12 @@ keep copy tight; depiction over words.
 
 ## Evidence on Hand
 
-Real, non-fabricated numbers only (do not invent others): ground-truth audit of 12 cases —
-Lean 12/12 correct, Gemini 23/36 runs correct with systematic partial-information failures
-(AUDIT.md); 435,456 fuzzed cases with zero Lean/baseline disagreement; live metrics per run
-(e.g. 15,960 ms / 4,196+3,578 tokens / ≈$0.01 vs 169 ms / 43 ms CPU / ≈$0.0000005); Lean
-source at AlixHack/SimpleProbate/*.lean; court page content in content/simple-transfer.md.
+Use only evidence runnable at the shipped head: exactness and
+partial-completion soundness theorems, the backend contract suite that executes
+all 12 shipped cases against the compiled adapter, and live per-run metrics.
+`AUDIT.md` is a historical pre-migration Gemini experiment, not current
+performance evidence. Lean source lives in `SimpleProbate/*.lean`; court-page
+content lives in `content/simple-transfer.md`.
 
 ## Product Principles
 

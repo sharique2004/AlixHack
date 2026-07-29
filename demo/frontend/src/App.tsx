@@ -50,12 +50,17 @@ async function post(path: string, body: CaseInput): Promise<CheckResult> {
 
 function targetValueCents(c: CaseInput): number | null {
   const assets = c.estate?.assets ?? [];
-  return assets[c.target_index]?.gross_value_cents ?? null;
+  const asset = assets[c.target_index];
+  return asset?.current_gross_value_cents ?? asset?.gross_value_cents ?? null;
 }
 
 function withTargetValue(c: CaseInput, cents: number): CaseInput {
   const assets = (c.estate?.assets ?? []).map((a, i) =>
-    i === c.target_index ? { ...a, gross_value_cents: cents } : a,
+    i === c.target_index
+      ? a.current_gross_value_cents != null
+        ? { ...a, current_gross_value_cents: cents }
+        : { ...a, gross_value_cents: cents }
+      : a,
   );
   return { ...c, estate: { ...(c.estate ?? {}), assets } };
 }
@@ -443,9 +448,9 @@ export default function App() {
               </label>
               <span
                 className="chip chip-amber"
-                title="Ground-truth audit: 23 of 36 Gemini runs matched the verified answer (3 runs per case)"
+                title="Run the current case to measure this model's latency, tokens, and cost"
               >
-                23/36 runs correct
+                Per-query · live metrics
               </span>
             </div>
           }
@@ -510,9 +515,9 @@ export default function App() {
             <div className="llm-controls">
               <span
                 className="chip chip-green"
-                title="435,456 fuzzed cases with zero disagreement against the statutory predicates; 12/12 ground-truth audit"
+                title="Exactness and partial-completion soundness are theorem-backed; all 12 shipped samples execute in the backend contract suite"
               >
-                Verified · 435,456 cases · 12/12 audit
+                Theorem-backed · 12 executable samples
               </span>
               <span className="chip chip-blue">Re-answers live as you drag</span>
             </div>

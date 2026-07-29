@@ -1,9 +1,12 @@
-# Decision Rules — CA Probate Simple Transfer Checker (v2, Lean-mirrored)
+# Decision Rules — CA Probate Simple Transfer Checker (v2, exact Lean API)
 
-> **Authority note.** These rules are a plain-English rendering of the vendored Lean 4 formalization
-> at `AlixHack/SimpleProbate/*.lean` (Date, Thresholds, Estate, Eligibility). Where this page and the
-> Lean code disagree, **the Lean code wins**. The model is educational: Lean proves consequences of
-> supplied facts; it does not establish their truth. Not legal advice.
+> **Authority note.** These rules are a plain-English rendering of the typed,
+> theorem-backed exact formalization at `SimpleProbate/*.lean` (especially
+> Date, Thresholds, Decision, Estate, Case, Eligibility, and
+> ProcedureAssessment). `Api.lean` is only the JSON adapter boundary. Where
+> this page and the Lean code disagree, **the Lean code wins**. The model is
+> educational: Lean proves consequences of supplied facts; it does not
+> establish their truth. Not legal advice.
 
 > **SEMANTIC FLIP vs v1 — read this first.** In v1, the DE-305, DE-310, and DE-221 paths were
 > reported as `OTHER_FORM_REQUIRED`. In v2 they are **simplified transfer routes**, so a case that
@@ -81,9 +84,11 @@ Beyond that:
 - Eligible **only** when every one of the five simplified routes above is conclusively
   disqualified. It is never recommended while any simplified route qualifies or is unresolved.
 
-## 3. Verdicts and aggregation (partial information)
+## 3. Verdicts and aggregation (typed partial facts)
 
-Facts may be `null` = **unknown**. Unknown is **never** treated as false.
+Facts may be `null` = **unknown**. Unknown is **never** treated as false. The
+exact assessor returns typed satisfactions, failures, and missing facts; the
+adapter turns those facts/failures into the stable JSON reason ids and paths.
 
 Within one route, each conjunct evaluates to satisfied, violated, or unknown, and:
 
@@ -127,12 +132,22 @@ Money is stored as **natural-number cents** in Lean (`Money.dollars 208_850` = 2
 the wire schema uses integer cents. `encumbrances_cents` (liens, mortgages) **never reduces any
 eligibility value** — all caps compare gross values.
 
+The JSON adapter accepts `gross_value_cents` as a legacy fallback plus the
+independent `current_gross_value_cents` and `date_of_death_value_cents` facts.
+It chooses the explicit current fact for current-value calculations and the
+explicit date-of-death fact for date-at-death calculations; each falls back to
+the legacy value when its explicit key is absent or `null`. A value remains
+unknown only when neither that explicit key nor the legacy fallback supplies a
+number. Accordingly, exact missing-fact paths name
+`current_gross_value_cents` or `date_of_death_value_cents`, never the legacy
+compatibility key.
+
 Each asset has one of 14 `treatment` values. Contributions to the three route valuations:
 
 | treatment | personal-affidavit value | small-value RP value | primary-residence value | direct-transfer basis |
 |---|---|---|---|---|
 | `counted` | gross value¹ | gross if CA real | gross if CA real ∧ primary residence | — |
-| `employment_compensation` | gross − min(gross, exclusion)² | 0 | 0 | — |
+| `employment_compensation` | estate-wide employment remainder after one aggregate exclusion² | 0 | 0 | — |
 | `joint_tenancy` | 0 | 0 | 0 | joint_tenancy |
 | `direct_beneficiary` | 0 | 0 | 0 | named_beneficiary |
 | `revocable_trust` | 0 | 0 | 0 | revocable_trust |
@@ -152,10 +167,11 @@ Each asset has one of 14 `treatment` values. Contributions to the three route va
 Note that **counted California real property does count** toward the personal-affidavit value
 (only the *target* must be personal property for that route).
 
-² Per §13050(c), unpaid employment compensation is excluded **up to** the band's
-employment-compensation exclusion; the remainder counts. The Lean baseline applies the
-`min(gross, exclusion)` subtraction **per asset** — this page mirrors the code as written, not the
-spec's planned aggregate correction.
+² Per §13050(c), qualifying unpaid employment compensation is aggregated
+across the estate. The exact valuation then subtracts
+`min(aggregate employment compensation, exclusion)` once, so only the
+estate-wide remainder above the band's employment-compensation exclusion
+counts.
 
 A treatment with a "—" basis and 0 in all columns (e.g. `registered_vehicle`, `vessel`,
 `registered_home`, `terminable_at_death`, `military_compensation`) is excluded from the valuations
