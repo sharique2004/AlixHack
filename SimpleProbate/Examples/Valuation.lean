@@ -24,6 +24,73 @@ def realProperty
   isPrimaryResidence := primary
 }
 
+def knownZeroTreatmentAsset : PartialAsset := {
+  id := ⟨5⟩
+  name := "irrelevant joint-tenancy asset"
+  kind := .unknown
+  currentGrossValue := .unknown
+  dateOfDeathValue := .unknown
+  encumbrances := .known 0
+  treatment := .known .jointTenancy
+  includedInPrimaryResidencePetition := .unknown
+  isPrimaryResidence := .unknown
+}
+
+def knownZeroTreatmentEstate : PartialEstate := {
+  assets := [knownZeroTreatmentAsset]
+  inventoryComplete := .known true
+}
+
+def knownNonPrimaryEstate : PartialEstate := {
+  assets := [{
+    knownZeroTreatmentAsset with
+    treatment := .unknown
+    isPrimaryResidence := .known false
+  }]
+  inventoryComplete := .known true
+}
+
+def thresholds2026 : Thresholds := {
+  familySetAside := Money.dollars 107_900
+  employmentCompensationExclusion := Money.dollars 20_875
+  personalPropertyAffidavit := Money.dollars 208_850
+  primaryResidencePetition := Money.dollars 750_000
+  smallValueRealPropertyAffidavit := Money.dollars 69_625
+  survivingSpouseEarnings := Money.dollars 20_875
+}
+
+example :
+    knownZeroTreatmentEstate.personalAffidavitValuation thresholds2026 = {
+      lowerBound := 0
+      exactValue := some 0
+      missingFields := []
+      needsCompleteInventory := false
+    } := by decide
+
+example :
+    knownZeroTreatmentEstate.smallRealPropertyValuation = {
+      lowerBound := 0
+      exactValue := some 0
+      missingFields := []
+      needsCompleteInventory := false
+    } := by decide
+
+example :
+    knownZeroTreatmentEstate.primaryResidenceValuation = {
+      lowerBound := 0
+      exactValue := some 0
+      missingFields := []
+      needsCompleteInventory := false
+    } := by decide
+
+example :
+    knownNonPrimaryEstate.primaryResidenceValuation = {
+      lowerBound := 0
+      exactValue := some 0
+      missingFields := []
+      needsCompleteInventory := false
+    } := by decide
+
 example :
     ({ assets := [
       salary 1 (Money.dollars 15_000) (Money.dollars 12_000),

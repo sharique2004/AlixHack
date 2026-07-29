@@ -27,6 +27,37 @@ def personalCase : TransferCase := {
   propertyBelongsToSurvivor := false
 }
 
+def irrelevantKnownZeroAsset : PartialAsset := {
+  id := ⟨2⟩
+  name := "irrelevant joint-tenancy asset"
+  kind := .unknown
+  currentGrossValue := .unknown
+  dateOfDeathValue := .unknown
+  encumbrances := .known 0
+  treatment := .known .jointTenancy
+  includedInPrimaryResidencePetition := .unknown
+  isPrimaryResidence := .unknown
+}
+
+def personalCaseWithIrrelevantUnknowns : PartialTransferCase := {
+  personalCase.toPartial with
+  estate := {
+    assets := [
+      PartialAsset.ofTotal personalAsset,
+      irrelevantKnownZeroAsset
+    ]
+    inventoryComplete := .known true
+  }
+}
+
+example :
+    assessRoute personalCaseWithIrrelevantUnknowns
+      .personalPropertyAffidavit = .ok .qualifies := by decide
+
+example :
+    (assessRoutes personalCaseWithIrrelevantUnknowns).map (·.overall) =
+      .ok .simplifiedRoutesAvailable := by decide
+
 example :
     assessRoute personalCase.toPartial .personalPropertyAffidavit =
       .ok .qualifies := by decide

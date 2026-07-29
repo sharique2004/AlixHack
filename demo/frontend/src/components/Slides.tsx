@@ -105,19 +105,17 @@ export function Slides({ onClose }: SlidesProps) {
                 was never shown
               </li>
               <li>
-                <strong>It fills the gaps</strong> — unknowns get treated as favorable: in
-                our audit it ruled a case <em>eligible</em> while the date of death was
-                still unknown
+                <strong>Unknowns need an explicit contract</strong> — absent facts must stay
+                unresolved instead of being filled from plausible assumptions
               </li>
               <li>
-                <strong>You pay per question, and the answer wobbles</strong> — ~15 s, ~8k
-                tokens, ≈ $0.01–0.03 per case — and only <strong>23 of 36 runs</strong>{" "}
-                matched the verified answer
+                <strong>Every question is a fresh inference</strong> — latency, tokens, and
+                cost recur, and sampling can change the answer
               </li>
             </ul>
             <p className="slide-foot">
-              Audit method: 3 independent runs on each of 12 cases, graded against the
-              statute — full write-up in AUDIT.md
+              The live comparison reports time, tokens, and estimated cost for the current
+              case
             </p>
           </div>
         )}
@@ -129,16 +127,17 @@ export function Slides({ onClose }: SlidesProps) {
             <PipelineCompiled />
             <ul className="slide-points">
               <li>
-                <strong>Deterministic</strong> — same input, same answer, every time:{" "}
-                <strong>12/12</strong> on the same audit
+                <strong>Deterministic</strong> — the same typed input executes the same
+                decision procedure every time
               </li>
               <li>
-                <strong>Verified</strong> — checked against the statutory predicates on{" "}
-                <strong>435,456 cases</strong>, zero mismatches
+                <strong>Verified</strong> — total-case exactness and partial-completion
+                soundness are theorem-backed, with executable coverage for all 12 shipped
+                samples
               </li>
               <li>
-                <strong>Instant and free</strong> — ~20 ms of compute, ≈ $0.0000005 per
-                case, zero tokens
+                <strong>No inference tokens</strong> — each answer runs the compiled engine,
+                and the panel measures its runtime live
               </li>
               <li>
                 <strong>Honest about limits</strong> — refuses dates beyond its sources; a

@@ -218,6 +218,22 @@ private def getField? (json : Json) (key : String) : Option Json :=
   | .ok value => some value
   | .error _ => none
 
+private def getStringField? (json : Json) (key : String) : Option String :=
+  match getField? json key with
+  | some (.str value) => some value
+  | _ => none
+
+def irrelevantUnknownsInput : String :=
+  "{\"death_date\":{\"year\":2026,\"month\":1,\"day\":1},\"estate\":{\"inventory_complete\":true,\"assets\":[{\"name\":\"account\",\"kind\":\"personal\",\"gross_value_cents\":100000,\"encumbrances_cents\":0,\"treatment\":\"counted\",\"included_in_primary_residence_petition\":false,\"is_primary_residence\":false},{\"name\":\"joint account\",\"kind\":null,\"gross_value_cents\":null,\"encumbrances_cents\":0,\"treatment\":\"joint_tenancy\",\"included_in_primary_residence_petition\":null,\"is_primary_residence\":null}]},\"target_index\":0,\"authority\":\"no_proceeding\",\"days_since_death\":40,\"six_months_elapsed\":false,\"claimant_is_successor\":true,\"no_superior_right\":true,\"funeral_last_illness_and_unsecured_debts_paid\":true,\"survivor_status\":\"none\",\"property_passes_to_survivor\":false,\"property_belongs_to_survivor\":false}"
+
+example :
+    getStringField? (run irrelevantUnknownsInput) "verdict" =
+      some "ELIGIBLE" := by native_decide
+
+example :
+    getStringField? (run irrelevantUnknownsInput) "overall" =
+      some "simplified_routes_available" := by native_decide
+
 example :
     (getField? (run
       "{\"death_date\":{\"year\":2026,\"month\":1,\"day\":1},\"estate\":{\"inventory_complete\":true,\"assets\":[{\"name\":\"account\",\"kind\":\"personal\",\"gross_value_cents\":100000,\"encumbrances_cents\":0,\"treatment\":\"counted\",\"included_in_primary_residence_petition\":false,\"is_primary_residence\":false}]},\"target_index\":0,\"authority\":\"no_proceeding\",\"days_since_death\":40,\"six_months_elapsed\":false,\"claimant_is_successor\":true,\"no_superior_right\":true,\"funeral_last_illness_and_unsecured_debts_paid\":true,\"survivor_status\":\"none\",\"property_passes_to_survivor\":false,\"property_belongs_to_survivor\":false}")

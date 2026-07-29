@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import unittest
-from pathlib import Path
 
 from app.main import ALIXHACK_DIR, get_lean_source
 from app.schemas import Asset

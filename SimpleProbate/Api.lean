@@ -510,7 +510,11 @@ private def selectCourtReport
   | some report => report
   | none => missingCourtReport route
 
-/-- Project an exact assessment to the stable six-row wire contract. -/
+/-- Project an assessment returned by `assessRoutes` to the stable six-row wire
+contract. `assessRoutes_routes_exact` guarantees that such an assessment has
+every simplified route exactly once, so `missingCourtReport` is unreachable on
+the public execution path. It remains a total-function fallback for callers
+that manually fabricate a `CaseAssessment` without that invariant. -/
 def projectAssessment
     (assessment : CaseAssessment) : List WireRouteReport :=
   let courts := assessment.routes.filterMap courtReport

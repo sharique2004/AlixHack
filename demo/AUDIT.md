@@ -1,4 +1,9 @@
-# Ground-Truth Audit — Gemini vs Lean on the 12 Sample Cases
+# Historical Ground-Truth Audit — Gemini vs Lean on the 12 Sample Cases
+
+> **Historical snapshot only.** This experiment was recorded on 2026-07-28
+> before the dual-valued fixture and exact-engine migration. Its Gemini runs
+> have not been rerun against the shipped head, so the scores and route-level
+> observations below are not current performance evidence.
 
 *2026-07-28. Method: 12 independent audit agents, one per case. Each derived the legally correct
 answer from the court self-help page and Probate Code (NOT from either engine), then graded the
@@ -74,11 +79,11 @@ Route-level errors (even where the verdict was right):
 - Runs 2 and 3: formal_probate_or_other_procedure row omits 'DE-111' from the forms array (Lean lists it); run 2 also leaves the reasons array empty and puts the rationale only in detail. Cosmetic, status is correct.
 
 Failure modes:
-- **known_enum_treated_as_unknown** — “Could qualify if the Chase checking account has a named beneficiary”
+- **known_enum_treated_as_unknown** — “Could qualify if the Chase checking account has a named beneficiary”\
   The closed 'treatment' enum ('counted') is the authoritative, known answer to whether the asset passes outside probate, but the model's helpfulness prior pushes it to enumerate real-world possibilities (beneficiary designations, joint ownership) the schema has already ruled on, so it hallucinates schema fields that do not exist and converts a known violation into needs_information. It is pattern-matching on how bank accounts work in the world rather than doing closed-world evaluation of the supplied fact model — the mirror image of the unknown-treated-as-known failure: here a known fact is treated as unknown.
-- **sampling_variance_route_status** — “The 'direct_transfer' route may also be applicable, but more information about the specific nature of the bank account ... is needed”
+- **sampling_variance_route_status** — “The 'direct_transfer' route may also be applicable, but more information about the specific nature of the bank account ... is needed”\
   Only run 1 of 3 produces the needs_information flip; runs 2 and 3 correctly output does_not_qualify on the byte-identical input. Temperature sampling makes route-level determinations non-deterministic: the top verdict is stable because it is overdetermined (the affidavit route dominates), but marginal route rows sit near a decision boundary in the model's distribution, so per-route status is a coin flip across samples — exactly the reliability gap a deterministic engine does not have.
-- **output_format_fragility** — “A simplified route (personal property affidavit) qualifies, so formal probate is not required.”
+- **output_format_fragility** — “A simplified route (personal property affidavit) qualifies, so formal probate is not required.”\
   Runs 2 and 3 drop 'DE-111' from the formal-probate forms array and run 2 leaves its reasons array empty, moving the justification into the free-text detail field. JSON-schema adherence competes with content placement: the model reliably fills required top-level structure but treats semantically parallel sub-arrays (forms, reasons) as optional decoration whose population varies run to run, unlike the Lean engine's fixed serialization.
 
 
@@ -101,9 +106,9 @@ Route-level errors (even where the verdict was right):
 - All runs: primary_residence_petition and personal_property_affidavit rows are right in status but under-enumerate conjuncts vs Lean (e.g. no run flags that the joint-tenancy treatment itself disqualifies the target from the counted-real routes) — benign for the status, but the explanations are a sample of plausible reasons, not an evaluation trace.
 
 Failure modes:
-- **s13050_exclusion_ignored_in_valuation** — “"exceeds the maximum allowed ($69,625)"”
+- **s13050_exclusion_ignored_in_valuation** — “"exceeds the maximum allowed ($69,625)"”\
   The statutory check is two-stage: filter assets by §13050 treatment (joint tenancy contributes $0), then compare the sum to the cap. The model instead performs the single most salient surface operation — big asset number vs threshold number — because eligibility-check patterns in training data overwhelmingly look like 'value > limit ⇒ fail'. The extra conditional layer (this asset is excluded from that very valuation) loses to the high-availability arithmetic comparison. Identical in all three samples at non-zero temperature, so it is a systematic prior, not sampling variance; it only stayed harmless because independent conjuncts (treatment, timing, debts) also disqualified the route.
-- **disqualifier_enumeration_truncation** — “"funeral/debt payments are outstanding" (run 3 — the only true DE-305 conjunct any run cites)”
+- **disqualifier_enumeration_truncation** — “"funeral/debt payments are outstanding" (run 3 — the only true DE-305 conjunct any run cites)”\
   Once the model has committed status: does_not_qualify and emitted one plausible reason object, JSON-schema adherence makes closing the reasons array the lowest-loss continuation — nothing in the decoding objective rewards exhaustively evaluating remaining conjuncts the way Lean's decidability instance must. Result: the true first-violated conjunct (target treatment not counted) appears in zero of three runs, and the six-month wait in zero of three, so the reasons field is post-hoc justification rather than a faithful trace; a user reading it would wrongly conclude DE-305 fails only on value and could become usable later.
 
 
@@ -125,13 +130,13 @@ Route-level errors (even where the verdict was right):
 - Run 3 (unparsed raw text): repeats the same spousal_property_petition does_not_qualify error and misstates the target's value as $650 instead of $65,000.
 
 Failure modes:
-- **closed_world_fact_treated_as_unknown** — “needs more information to determine if the asset directly passes ... (e.g., if it's a survivorship account)”
+- **closed_world_fact_treated_as_unknown** — “needs more information to determine if the asset directly passes ... (e.g., if it's a survivorship account)”\
   Run 1's world-knowledge prior (real savings accounts might be joint or POD) overrides the input schema's semantics, where treatment:'counted' already encodes the §13050 answer; the helpfulness prior re-opens a question the data model has closed and even hallucinates a field ('type_of_ownership') that does not exist in the schema — pattern-completion toward a plausible intake checklist rather than evaluation of the supplied facts.
-- **attribute_binding_conflation** — “its treatment is 'counted' for small estate calculation, not 'spouse_passage'”
+- **attribute_binding_conflation** — “its treatment is 'counted' for small estate calculation, not 'spouse_passage'”\
   Runs 2 and 3 bind the DE-221 eligibility test to the wrong feature: the per-asset §13050 valuation-treatment token instead of the case-level boolean property_passes_to_survivor=true. The salient 'spouse_passage' label on the sibling asset creates a contrastive lexical cue ('this asset lacks that tag, so no spousal route') that outcompetes rule application — surface token matching between the treatment enum and the route name substitutes for the stated conjunct list, which has no value cap and no treatment condition.
-- **unit_confusion_cents** — “valued at $650”
+- **unit_confusion_cents** — “valued at $650”\
   Run 3 converts 6,500,000 cents to $650 — dropping four zeros instead of two. Long integers are tokenized as digit chunks, so exact division by 100 is positional-arithmetic the model approximates rather than computes; here the error is masked (both $650 and $65,000 are under the $208,850 cap, so the verdict text is unchanged), which is exactly why lossy cent handling is dangerous — it would silently flip near-threshold cases.
-- **output_format_fragility** — “"forms": []\n    ,\n    { (missing '}' closing the first route object)”
+- **output_format_fragility** — “"forms": []\n    ,\n    { (missing '}' closing the first route object)”\
   Run 3 emitted ~3k tokens of deeply nested JSON without constrained decoding; bracket matching across that span is a working-memory task where one sampling step dropped a closing brace, and the parser then discarded an otherwise substantively ELIGIBLE answer. Schema adherence and free-text reasoning compete for the same token stream, so a single structural slip costs the entire run — a failure class a deterministic engine cannot have.
 
 
@@ -154,11 +159,11 @@ Route-level errors (even where the verdict was right):
 - Runs 1-3 (cosmetic): free-text reason ids drift from Lean's stable ids (e.g. not_real_property vs target_not_california_real_property), and runs 1-2 also omit DE-111 on the fallback row.
 
 Failure modes:
-- **closed_world_broken_by_world_knowledge** — “It is unknown if the Vanguard account has a designated beneficiary”
+- **closed_world_broken_by_world_knowledge** — “It is unknown if the Vanguard account has a designated beneficiary”\
   The model's real-world prior (US brokerage accounts often carry TOD/beneficiary designations) overrides the closed-world schema in which treatment='counted' is a supplied, conclusive fact. It then back-fills the missing_facts array with plausible-sounding field paths that do not exist in the input schema — free-text JSON fields invite generation from the prior rather than restriction to observed keys. Only 1 of 3 samples did this, so it is a sampling-variance-exposed boundary failure, not a systematic one.
-- **status_enum_semantics_drift** — “Formal probate is not yet determined as the required path”
+- **status_enum_semantics_drift** — “Formal probate is not yet determined as the required path”\
   The enum label does_not_qualify is polysemous: in natural language it can mean 'not the recommendation right now', while the framework defines it as 'conclusively disqualified'. Run 3 reasons correctly in prose (more info needed) but resolves the label by surface semantics of its own conclusion instead of the aggregation rule — schema adherence and chain-of-thought decouple, so the structured field contradicts the free-text detail on the same row.
-- **derived_missing_fact_omission** — “The personal property affidavit route is unresolved.”
+- **derived_missing_fact_omission** — “The personal property affidavit route is unresolved.”\
   Run 1 marks the fallback needs_information but leaves missing_facts empty: the unknown value appears in the fallback's condition only transitively (via the unresolved affidavit route), and LLMs list missing facts where the unknown token appears syntactically in a route's own conjuncts, not facts propagated through an aggregation dependency. Lean computes the closure and lists the fact on both rows.
 
 
@@ -180,11 +185,11 @@ Route-level errors (even where the verdict was right):
 - All runs: formal_probate_or_other_procedure marked does_not_qualify ('simplified route available') — should be needs_information; consistent with, and downstream of, the erroneous qualifies on the affidavit route.
 
 Failure modes:
-- **interval_dominance_over_unknown_date** — “"below the small estate threshold regardless of the exact date of death"”
+- **interval_dominance_over_unknown_date** — “"below the small estate threshold regardless of the exact date of death"”\
   All three runs resolve an unknown fact by dominance: since $42,000 is under every enumerated band, the model concludes the cap check passes for any death date. This is world-knowledge-plausible monotone reasoning (thresholds only rise), but the framework marks date-dependent checks as unresolved when the date is null. Instruction-following loses to a strong helpfulness prior: given a numerically 'obvious' answer, the model completes the eligibility conclusion rather than emitting the epistemically correct needs_information.
-- **no_snapshot_boundary_concept** — “"which range from $166,250 to $208,850 depending on the unknown death date"”
+- **no_snapshot_boundary_concept** — “"which range from $166,250 to $208,850 depending on the unknown death date"”\
   The model treats the three visible bands as the closed, complete possibility space for the unknown date. An LLM has no native notion of a versioned source snapshot — its training prior is that law is a timeless background fact — so 'unknown death date' collapses to 'some past date covered by my table', never 'possibly a date after 2026-12-31 for which the model supports no threshold at all'. That closed-world assumption is precisely what licenses the dominance argument in the previous mode.
-- **unknown_invented_on_known_fact** — “"It is unknown if the bank account has a pay-on-death (POD) designation"”
+- **unknown_invented_on_known_fact** — “"It is unknown if the bank account has a pay-on-death (POD) designation"”\
   Run 1 marks direct_transfer needs_information and fabricates a missing fact ('estate.assets[0].treatment_details') even though the schema's closed treatment vocabulary already settles the question: treatment='counted' conclusively means no direct-transfer basis. Real-world knowledge (bank accounts often carry POD designations) leaks past the schema semantics, manufacturing uncertainty about a decided fact — the mirror image of the main error, where decided-by-schema loses to plausible-in-the-world. Only 1 of 3 runs does this, showing it is a sampling-variance intrusion rather than systematic.
 
 
@@ -207,11 +212,11 @@ Route-level errors (even where the verdict was right):
 - Not an error but notable: all runs converted cents correctly ($90,000 + $8,000 = $98,000) and picked the right $208,850 band, so the failure is purely epistemic, not numeric.
 
 Failure modes:
-- **unknown_treated_as_favorable** — “"The total qualifying estate value ($98,000) is below the $208,850 threshold"”
+- **unknown_treated_as_favorable** — “"The total qualifying estate value ($98,000) is below the $208,850 threshold"”\
   Closed-world assumption over the input JSON: the model treats the listed assets as the exhaustive estate and sums them against the cap. A null field has almost no token salience next to concrete dollar figures, and the helpfulness/completion prior pushes toward a decisive favorable verdict. The prompt's guard ('unknown must never be treated as false') is one-directional; the model instead treated the unknown as TRUE (inventory complete), which literal instruction-following does not prohibit - it satisfied the letter of the rule while inverting its intent.
-- **no_epistemic_boundary** — “"missing_facts": [] on all six rows of every run”
+- **no_epistemic_boundary** — “"missing_facts": [] on all six rows of every run”\
   Emitting needs_information requires the model to represent and verbalize what it does NOT know, which autoregressive generation does poorly: the reasoning chain is built from facts that appear in the prompt, and an absent/null fact generates no forward signal. JSON-schema adherence compounds this - the qualify/does-not-qualify binary is the high-prior attractor for eligibility-checker outputs, and populating a missing_facts list has no template in the model's arithmetic-check chain.
-- **systematic_not_variance** — “"which is well below the threshold" (identical framing in runs 2 and 3)”
+- **systematic_not_variance** — “"which is well below the threshold" (identical framing in runs 2 and 3)”\
   All three temperature samples converge on the same wrong verdict with near-identical sum-and-compare reasoning, so this is a deterministic prior failure, not sampling noise: 'eligibility = sum listed values, compare to threshold' is a heavily stereotyped pattern in training data, and no sample deviates into questioning whether the list is complete. Majority-vote ensembling would not rescue this case.
 
 
@@ -228,15 +233,15 @@ Failure modes:
 **Gemini runs:** INCOMPLETE_INFO, INCOMPLETE_INFO, OTHER_FORM_REQUIRED — 1/3 correct.
 
 Failure modes:
-- **hallucinated_missing_facts_open_world_leakage** — “It is unknown if the 'Citibank savings account' passes directly to a survivor or named beneficiary”
+- **hallucinated_missing_facts_open_world_leakage** — “It is unknown if the 'Citibank savings account' passes directly to a survivor or named beneficiary”\
   Run 1 invented schema fields (estate.assets[0].is_survivorship_account, has_named_beneficiary) that do not exist in the input. The framework decides direct_transfer solely from the target's treatment, and treatment='counted' is a known fact that conclusively rules it out. The model's world knowledge that real bank accounts can carry POD/joint designations leaks past the closed fact schema, and its trained helpfulness behavior of proposing 'what else would you need to know' manufactures an unknown — flipping a fully-determined does_not_qualify into needs_information and the top verdict into INCOMPLETE_INFO.
-- **unknown_overrides_known_violation** — “the value of another asset in the estate (`estate.assets[2].current_gross_value_cents`) is unknown, making the total estate value undetermined”
+- **unknown_overrides_known_violation** — “the value of another asset in the estate (`estate.assets[2].current_gross_value_cents`) is unknown, making the total estate value undetermined”\
   Run 2 pattern-matched 'a null exists → needs_information' instead of applying the precedence rule that a known violation beats unknowns. The prompt's emphatic 'unknown must never be treated as false' instruction acts as a strong lexical trigger that competes with — and here defeats — the monotonicity argument (an unknown non-negative addend cannot pull an already-over-cap $240,000 subtotal back under $208,850). Applying that argument requires an extra arithmetic step the cheap pattern skips.
-- **failure_to_aggregate_before_threshold_check** — “While the target asset itself is below this value”
+- **failure_to_aggregate_before_threshold_check** — “While the target asset itself is below this value”\
   Run 2 compared the single target asset ($150,000) to the $208,850 cap instead of summing all counted assets, so it never noticed the subtotal was over the limit. Summing 15,000,000 + 9,000,000 cents and converting to dollars is exactly the kind of multi-token big-integer arithmetic LLMs handle lossily and preferentially avoid; skipping the sum left the null asset as the apparent blocker.
-- **sampling_variance_on_multi_step_rule** — “$150,000 (Citibank savings) + $90,000 (Vanguard index fund) = $240,000. This amount already exceeds the $208,850 threshold”
+- **sampling_variance_on_multi_step_rule** — “$150,000 (Citibank savings) + $90,000 (Vanguard index fund) = $240,000. This amount already exceeds the $208,850 threshold”\
   Run 3 proves the correct chain (sum first, then apply violation-beats-unknown) is within the model's capability, yet across three samples of identical input the model produced two different wrong answers and one right one. Whether the deep arithmetic chain or the shallow 'null → incomplete' heuristic wins is decided by sampling, giving a 1/3 accuracy on the rule this test case exists to probe — a nondeterminism a formal engine cannot exhibit.
-- **fallback_row_incoherence_downstream** — “Other simplified routes require more information before concluding formal probate is necessary.”
+- **fallback_row_incoherence_downstream** — “Other simplified routes require more information before concluding formal probate is necessary.”\
   Runs 1 and 2 also mis-state the formal_probate fallback row (does_not_qualify and needs_information respectively). These are internally consistent with their own erroneous simplified-route rows rather than independent errors, but they show error propagation: because verdict aggregation is derived from route statuses, one hallucinated or unaggregated route corrupts both the fallback row and the top verdict — the JSON schema forces a status for every row, so a single upstream mistake is amplified into a fully-populated but wrong table.
 
 
@@ -257,9 +262,9 @@ Route-level errors (even where the verdict was right):
 - Run 3: direct_transfer row grounds the disqualification in 'property_passes_to_survivor' being false and survivor_status, but the rule actually keys on the target asset's treatment ('counted' maps to no direct-transfer basis in the rules.md section 5 table); right status, wrong mechanism.
 
 Failure modes:
-- **cross_route_conjunct_bleed** — “unsecured debts are not indicated as paid”
+- **cross_route_conjunct_bleed** — “unsecured debts are not indicated as paid”\
   The prompt presents all case fields in one flat JSON, and the model retrieves associatively rather than binding each conjunct to its statutory route: a salient negative field (debts_paid=false) gets attached to every route it superficially fits, so the DE-305-only 13200(a)(8) condition bleeds into the 13100 affidavit row. A helpfulness prior toward citing more corroborating reasons compounds it — extra reasons feel thorough even when statutorily wrong.
-- **surface_field_anchoring** — “'property_passes_to_survivor' being false”
+- **surface_field_anchoring** — “'property_passes_to_survivor' being false”\
   For direct_transfer the model anchors on input fields whose names lexically resemble the route concept (survivor/beneficiary flags) instead of the actual dependency (the asset's treatment enum). This is token-level pattern matching between field names and route semantics substituting for the rule's real conjunct structure; the conclusion happens to coincide here, so the shortcut goes unpunished.
 
 
@@ -280,11 +285,11 @@ Route-level errors (even where the verdict was right):
 - Runs 1-3 (cosmetic): formal_probate row omits the DE-111 form that Lean lists; run 2 additionally leaves that row's reasons array empty.
 
 Failure modes:
-- **known_fact_treated_as_unknown** — “'Direct transfer' eligibility for the asset is unknown.”
+- **known_fact_treated_as_unknown** — “'Direct transfer' eligibility for the asset is unknown.”\
   The treatment enum is a closed world: 'counted' affirmatively means no direct-transfer basis. But the LLM's calibrated-hedging prior treats the absence of a natural-language cue like 'joint tenancy' as missing evidence rather than a negation, so it downgrades a decidable known violation to needs_information — the mirror image of the unknown-treated-as-favorable failure, and only harmless here because another route already qualified.
-- **hallucinated_missing_fact_path** — “estate.assets[0].direct_transfer_eligibility”
+- **hallucinated_missing_fact_path** — “estate.assets[0].direct_transfer_eligibility”\
   Once run 1 committed to needs_information, the output schema demanded a missing_facts entry; schema-adherence pressure then competed with grounding, and the model confabulated a plausible-sounding field path that does not exist in the input schema instead of citing a real input field — format completion generating a fabricated identifier.
-- **conjunct_over_attribution** — “no superior right, debts paid) are met”
+- **conjunct_over_attribution** — “no superior right, debts paid) are met”\
   Runs 1 and 3 recite superior-right and debts-paid as DE-310 conjuncts, but the framework's primary-residence route has neither (rules.md notes it explicitly). The LLM blends the checklists of adjacent similar routes (DE-305's conjuncts bleed into DE-310) — prototype interference across near-duplicate templates in context rather than tracking each route's exact conjunct set. Harmless here since those facts were true, but it would wrongly disqualify a DE-310 case with unpaid debts.
 
 
@@ -304,9 +309,9 @@ Route-level errors (even where the verdict was right):
 - No route-row status errors in the two parseable runs — all six statuses match ground truth in runs 2 and 3. Cosmetic divergence only: both runs omit the forms arrays Lean populates on non-qualifying rows (DE-310/DE-315 on primary_residence_petition, DE-111 on the fallback), and run 1's route table is empty solely because parsing failed, not because its content was wrong.
 
 Failure modes:
-- **output_format_fragility** — “"forms": []\n    ,\n    {”
+- **output_format_fragility** — “"forms": []\n    ,\n    {”\
   Run 1's answer was semantically correct end-to-end (verdict ELIGIBLE, all six route statuses matching ground truth are visible in the raw text), but a single closing brace was dropped after the first route object, so the harness parsed it as malformed_case with verdict null. Mechanistically: autoregressive decoding emits JSON token by token with no syntactic stack, and six near-identical nested route objects create a strong repetition pattern in which the model occasionally skips a boundary token when transitioning between objects; the strict parser then converts a fully correct legal analysis into a hard failure. Schema adherence in LLMs is probabilistic, and long (~2,800-token) nested outputs multiply the per-token chance of one structural slip; there is no self-validation pass before emission.
-- **threshold_misapplication_latent** — “below the general small estate threshold of $208,850”
+- **threshold_misapplication_latent** — “below the general small estate threshold of $208,850”\
   Run 2 (verdict correct) gratuitously compared the whole $95,000 estate against the §13100 personal-property cap, which is irrelevant to DE-305 — §13200 caps only the gross counted CA real property at $69,625. This is the helpfulness/retrieval prior at work: the model surfaces the most salient memorized threshold for 'small estate' even when the route under evaluation does not consume it. Benign here because both comparisons pass, but on a case with real property under $69,625 and a total estate over $208,850 this conflation could flip a DE-305 row to does_not_qualify incorrectly.
 
 
@@ -327,11 +332,11 @@ Route-level errors (even where the verdict was right):
 - Run 1: formal_probate_or_other_procedure marked 'qualifies' while direct_transfer was unresolved, violating the rule that the fallback qualifies only when all five simplified routes are conclusively disqualified (and inconsistent with its own INCOMPLETE_INFO top verdict).
 
 Failure modes:
-- **phantom_unknowns_from_schema_absent_fields** — “needs additional information about how the account was titled”
+- **phantom_unknowns_from_schema_absent_fields** — “needs additional information about how the account was titled”\
   The prompt's 'null means UNKNOWN, never treat unknown as false' directive interacts with the model's world-knowledge prior that real bank accounts can carry POD/joint/TOD titling: run 1 treats attributes absent from the schema (it invents estate.assets[0].beneficiary_named, .joint_tenancy, .tod, .multiple_party_account) as null-valued unknowns, instead of binding the closed treatment enum ('counted') as the authoritative, fully-determined encoding of titling. Epistemic-humility instruction-following overrides schema grounding — a case with zero null fields gets manufactured unknowns.
-- **fallback_gating_inconsistency** — “making full probate a potential required procedure”
+- **fallback_gating_inconsistency** — “making full probate a potential required procedure”\
   Run 1 marks the formal-probate fallback 'qualifies' while simultaneously holding direct_transfer as needs_information — violating the framework rule that the fallback qualifies only when all five simplified routes are conclusively disqualified, and contradicting its own INCOMPLETE_INFO verdict. Mechanistically, route rows are generated locally without a global consistency pass, and the forced status enum flattens the model's hedged free-text ('potential required') into a definite 'qualifies' — JSON-schema adherence competing with the reasoning it wrote.
-- **sampling_variance_on_epistemic_boundary** — “The case indicates no basis for direct transfer”
+- **sampling_variance_on_epistemic_boundary** — “The case indicates no basis for direct transfer”\
   Runs 2 and 3 read the identical treatment='counted' field as a determinate 'no direct-transfer basis' while run 1 read it as unknown — a 1-in-3 verdict flip on identical input. The decision of whether an enum value closes off unstated attributes sits within temperature noise rather than being deterministically resolved, which is exactly the class of boundary a symbolic engine never wobbles on. Notably no run mis-handled the large cent value (all rendered 17,500,000 cents as $175,000) or the date-of-death band, so the instability is purely epistemic, not numeric.
 
 
@@ -353,9 +358,9 @@ Route-level errors (even where the verdict was right):
 - Runs 2 and 3 attach forms (DE-305, DE-310/DE-315, DE-221/DE-226) to does_not_qualify rows — cosmetic schema noise; Lean emits forms only where relevant.
 
 Failure modes:
-- **no_epistemic_boundary** — “"exceeds the small estate threshold of $208,850 for deaths on or after April 1, 2025" (run 3, applied to a 2027-03-01 death)”
+- **no_epistemic_boundary** — “"exceeds the small estate threshold of $208,850 for deaths on or after April 1, 2025" (run 3, applied to a 2027-03-01 death)”\
   LLMs carry no internal representation of a source-snapshot validity window: the threshold band 'on or after April 1, 2025' reads as open-ended and pattern-matches any later date, and the instruction-tuned prior toward completing the requested six-route JSON strongly outweighs the rarely-sampled refuse-with-error branch. That only 1 of 3 runs refused shows the boundary rule is represented but weakly weighted — sampling variance decides whether the refusal or the substantive-analysis continuation wins.
-- **unit_confusion_cents** — “"a Wells Fargo checking account valued at $300,000" (runs 2 and 3; legacy gross_value_cents is 3,000,000 = $30,000)”
+- **unit_confusion_cents** — “"a Wells Fargo checking account valued at $300,000" (runs 2 and 3; legacy gross_value_cents is 3,000,000 = $30,000)”\
   Large integers are tokenized in multi-digit chunks, and cents-to-dollars division is done 'by eye' in a single forward pass rather than verified arithmetically — dropping one zero instead of two yields a plausible round figure 10x too high. Both non-refusing runs made the identical misconversion, which flipped $30,000 <= $208,850 into an over-cap disqualification; even ignoring the snapshot rule, the merits verdict (ELIGIBLE via the §13100 affidavit) was inverted to OTHER_FORM_REQUIRED. The error's consistency across runs suggests a systematic conversion bias, not one-off noise.
-- **error_taxonomy_collapse** — “"considered a malformed case according to the system's constraints" (run 1)”
+- **error_taxonomy_collapse** — “"considered a malformed case according to the system's constraints" (run 1)”\
   The model retrieved the correct high-level behavior (refuse, verdict null) but mapped the out-of-range date onto the wrong error enum: near-synonymous categories (after_snapshot / invalid_date / malformed_case) collapse toward the broadest, most generic label when JSON-schema filling competes with precise recall of the spec's taxonomy — 'malformed' is the higher-frequency catch-all term for a bad input in training data, so it wins over the domain-specific 'after_snapshot'.

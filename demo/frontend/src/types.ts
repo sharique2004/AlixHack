@@ -47,7 +47,7 @@ export type ValuationTreatment =
   | "employment_compensation";
 
 export interface AssetInput {
-  /** Required, unique within the list. */
+  /** Required display label; duplicate names are allowed. */
   name: string;
   kind?: AssetKind | null;
   /** Backward-compatible fallback for both exact value fields, in integer cents. */

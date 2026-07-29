@@ -75,7 +75,22 @@ example :
     }) := by decide
 ```
 
-### Compatibility migration
+### Migration from the removed partial API
+
+`SimpleProbate.Partial` has been removed. Its public, executable-only model used
+`Option` fields and duplicated eligibility logic; partial facts and route
+decisions now live in the same exact model as the propositions and proofs.
+
+| Previous API | Exact API | Migration |
+| --- | --- | --- |
+| `SimpleProbate.Partial` | `Decision`, `Estate`, `Case`, and `Eligibility` | Import the owning exact module instead of the removed aggregate module. |
+| `Option`-valued `PartialAsset`, `PartialEstate`, and `PartialTransferCase` | `Knowledge`-valued partial types in `Estate` and `Case` | Replace `some x` with `.known x` and `none` with `.unknown`; completion relations now give those facts proof semantics. |
+| `RouteStatus` | `DecisionStatus EligibilityFact EligibilityFailure` | Match on `qualifies`, `doesNotQualify`, or `needsInformation` with typed facts and failures. |
+| String `FactPath` and `Disqualifier` | `EligibilityFact` and `EligibilityFailure` | Keep domain logic typed; `Api` alone projects facts and failures to stable wire strings. |
+| `routeStatus` and `overallOf` helpers | exact `assessRoute` and `assessRoutes` | Use `assessRoutes` for the complete typed route table and overall result. |
+| `Asset.grossValue` | `Asset.currentGrossValue` and `Asset.dateOfDeathValue` | Supply the current value for personal-property rules and the date-of-death value for real-property rules. |
+| Positional `targetIndex` identity | deterministic `AssetId` and `TransferCase.targetId` | Assign stable asset IDs and select the target by ID in the Lean API; duplicate names are allowed. |
+| `gross_value_cents` and `target_index` on JSON input | retained by the `Api` adapter | Existing wire clients remain compatible: the adapter generates deterministic IDs from asset positions, maps `target_index` to `targetId`, and uses `gross_value_cents` only as the fallback for an omitted or null explicit valuation field. |
 
 `RouteEligible` now takes a `SimplifiedRoute`; callers that still need the old
 `Route`-shaped predicate can use `LegacyRouteEligible`, with

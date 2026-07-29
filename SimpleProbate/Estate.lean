@@ -321,22 +321,31 @@ private def PartialAsset.employmentLowerBound
 
 private def PartialAsset.personalValuationMissing
     (asset : PartialAsset) : List (AssetId × AssetField) :=
-  match asset.kind, asset.includedInPrimaryResidencePetition with
-  | .known .outsideCaliforniaReal, _ => []
-  | _, .known true => []
-  | .known _, .known false =>
-      match asset.treatment with
-      | .unknown => missingField asset .treatment
-      | .known .counted | .known .employmentCompensation =>
+  match asset.treatment with
+  | .known .counted | .known .employmentCompensation =>
+      match asset.kind, asset.includedInPrimaryResidencePetition with
+      | .known .outsideCaliforniaReal, _ => []
+      | _, .known true => []
+      | .known _, .known false =>
           match asset.currentGrossValue with
           | .unknown => missingField asset .currentGrossValue
           | .known _ => []
-      | .known _ => []
-  | .unknown, .unknown =>
-      missingField asset .kind ++
-        missingField asset .primaryPetitionInclusion
-  | .unknown, .known false => missingField asset .kind
-  | .known _, .unknown => missingField asset .primaryPetitionInclusion
+      | .unknown, .unknown =>
+          missingField asset .kind ++
+            missingField asset .primaryPetitionInclusion
+      | .unknown, .known false => missingField asset .kind
+      | .known _, .unknown => missingField asset .primaryPetitionInclusion
+  | .known _ => []
+  | .unknown =>
+      match asset.kind, asset.includedInPrimaryResidencePetition with
+      | .known .outsideCaliforniaReal, _ => []
+      | _, .known true => []
+      | .known _, .known false => missingField asset .treatment
+      | .unknown, .unknown =>
+          missingField asset .kind ++
+            missingField asset .primaryPetitionInclusion
+      | .unknown, .known false => missingField asset .kind
+      | .known _, .unknown => missingField asset .primaryPetitionInclusion
 
 private def PartialAsset.smallRealLowerBound
     (asset : PartialAsset) : Money :=
@@ -349,17 +358,21 @@ private def PartialAsset.smallRealLowerBound
 
 private def PartialAsset.smallRealValuationMissing
     (asset : PartialAsset) : List (AssetId × AssetField) :=
-  match asset.kind with
-  | .unknown => missingField asset .kind
-  | .known .californiaReal =>
-      match asset.treatment with
-      | .unknown => missingField asset .treatment
-      | .known .counted =>
+  match asset.treatment with
+  | .known .counted =>
+      match asset.kind with
+      | .unknown => missingField asset .kind
+      | .known .californiaReal =>
           match asset.dateOfDeathValue with
           | .unknown => missingField asset .dateOfDeathValue
           | .known _ => []
       | .known _ => []
   | .known _ => []
+  | .unknown =>
+      match asset.kind with
+      | .unknown => missingField asset .kind
+      | .known .californiaReal => missingField asset .treatment
+      | .known _ => []
 
 private def PartialAsset.primaryResidenceLowerBound
     (asset : PartialAsset) : Money :=
@@ -370,21 +383,25 @@ private def PartialAsset.primaryResidenceLowerBound
 
 private def PartialAsset.primaryResidenceValuationMissing
     (asset : PartialAsset) : List (AssetId × AssetField) :=
-  match asset.kind with
-  | .unknown => missingField asset .kind
-  | .known .californiaReal =>
-      match asset.treatment with
-      | .unknown => missingField asset .treatment
-      | .known .counted =>
-          match asset.isPrimaryResidence with
-          | .unknown => missingField asset .primaryResidence
-          | .known true =>
-              match asset.dateOfDeathValue with
-              | .unknown => missingField asset .dateOfDeathValue
-              | .known _ => []
-          | .known false => []
-      | .known _ => []
+  match asset.treatment with
+  | .known .counted =>
+      match asset.kind, asset.isPrimaryResidence with
+      | .known .personal, _ | .known .outsideCaliforniaReal, _ => []
+      | _, .known false => []
+      | .unknown, _ => missingField asset .kind
+      | .known .californiaReal, .unknown =>
+          missingField asset .primaryResidence
+      | .known .californiaReal, .known true =>
+          match asset.dateOfDeathValue with
+          | .unknown => missingField asset .dateOfDeathValue
+          | .known _ => []
   | .known _ => []
+  | .unknown =>
+      match asset.kind, asset.isPrimaryResidence with
+      | .known .personal, _ | .known .outsideCaliforniaReal, _ => []
+      | _, .known false => []
+      | .unknown, _ => missingField asset .kind
+      | .known .californiaReal, _ => missingField asset .treatment
 
 private def PartialEstate.valuation
     (estate : PartialEstate)

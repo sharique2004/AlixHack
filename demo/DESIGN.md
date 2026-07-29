@@ -158,7 +158,7 @@ A near-white neutral ramp carries the page; one blue owns the solution identity;
 - **Hairline Soft** (`--line-soft`, #f1f4f8): row dividers, hover washes, inline-code and empty-state backgrounds.
 
 ### Tertiary (status hues, always with their tint)
-- **Confirm Green** (`--green` #16a34a / `--green-tint` #e9f7ee): qualifying routes, ELIGIBLE verdicts, valid-JSON dot, audit chips.
+- **Confirm Green** (`--green` #16a34a / `--green-tint` #e9f7ee): qualifying routes, ELIGIBLE verdicts, valid-JSON dot, verification chips.
 - **Caution Amber** (`--amber` #b45309 / `--amber-tint` #fdf3e4): needs-info states, INCOMPLETE verdicts, stale chip, accuracy chip.
 - **Ruled-Out Slate** (`--slate`, #64748b): the neutral "does not qualify" glyph — a non-alarming no.
 - **Error Red** (`--red` #dc2626 / `--red-tint` #fdecec): typed errors and unavailability only. Never decorative.
@@ -227,7 +227,7 @@ Icon tiles are 54px squares at 16px radius holding a 26px stroke/duotone SVG on 
 
 ### Chips
 - **Style:** pill, 600 weight, 0.7–0.76rem; deep-hue text on tint background with a slightly deeper 1px tinted border (green `#cdebd8`, amber `#f3ddb8`, blue `#cfe0fa`).
-- **Variants:** green (verified/audit claims), amber (accuracy caveats, "outdated" stale chip on white), blue (capability notes). Chips state evidence; they are not interactive.
+- **Variants:** green (theorem/sample-contract claims), amber (accuracy caveats, "outdated" stale chip on white), blue (capability notes). Chips state evidence; they are not interactive.
 
 ### Cards / Containers
 - **Corner Style:** 24px.

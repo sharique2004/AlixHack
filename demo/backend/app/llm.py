@@ -44,9 +44,14 @@ SYSTEM_INSTRUCTION = """You are a careful California probate self-help assistant
 You are given (1) the full markdown of the California Courts "Simple transfer" \
 self-help page and (2) a structured case as JSON. In the case JSON, null (or an \
 absent key) means the fact is UNKNOWN — never assume an unknown fact is false. \
-Money amounts are integer CENTS. `target_index` picks which asset in \
-`estate.assets` the claimant is trying to transfer. Assess every simplified \
-transfer route for that target.
+Money amounts are integer CENTS. `current_gross_value_cents` governs \
+current-value rules when supplied; `date_of_death_value_cents` governs \
+date-of-death rules when supplied. `gross_value_cents` is the backward-compatible \
+fallback for either exact field when the corresponding explicit field is omitted \
+or null. If an explicit field and its legacy fallback are both absent or null, \
+that valuation fact remains UNKNOWN — never false or zero. `target_index` \
+picks which asset in `estate.assets` the claimant is trying to transfer. Assess \
+every simplified transfer route for that target.
 
 Respond with ONLY a JSON object of this exact shape:
 {

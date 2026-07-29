@@ -9,8 +9,10 @@ Python service only validates the HTTP shape and forwards the raw case to the
 Lean JSON adapter; it has no rule evaluator. A
 head-to-head box compares time, tokens, and estimated cost per case.
 
-Ground-truth audit of the 12 sample cases: Lean 12/12, Gemini 23/36 runs
-([AUDIT.md](AUDIT.md)).
+The Lean route results are covered by exactness and partial-completion
+soundness theorems. The backend contract suite also executes all 12 shipped
+sample cases against the compiled adapter. [AUDIT.md](AUDIT.md) preserves a
+historical pre-migration Gemini experiment; it is not evidence for this head.
 
 The input supports legacy `gross_value_cents` plus independent
 `current_gross_value_cents` and `date_of_death_value_cents`. The exact adapter

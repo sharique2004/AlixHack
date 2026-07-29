@@ -13,7 +13,7 @@ FP formal_probate_or_other_procedure. Caps in cents: PPA band1 16,625,000 / band
 band3 20,885,000; SV band3 6,962,500; PR band3 75,000,000. All cases: valid target_index ⇒
 WellFormed holds (targetIsPartOfEstate := true).
 
-Notable code facts used: `Asset.personalAffidavitValue` counts `counted` assets of ANY kind except
+Notable code facts used: `Estate.personalAffidavitValue` counts `counted` assets of ANY kind except
 outside-CA real and included-in-petition; treatments other than counted/employment_compensation
 contribute 0. `smallValueRealPropertyValue` sums counted CA-real only. `primaryResidenceValue` sums
 counted CA-real primary-residence only. PR route has no no_superior_right conjunct; SP has no cap

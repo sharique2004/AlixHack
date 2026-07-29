@@ -119,7 +119,7 @@ class CivilDate(BaseModel):
 
 
 class Asset(BaseModel):
-    name: str  # required, unique within the list (uniqueness checked by Lean)
+    name: str  # display label; duplicates allowed (the adapter generates AssetId)
     kind: Optional[AssetKind] = None
     gross_value_cents: Optional[int] = None  # negative ⇒ Lean malformed_case
     # The Lean adapter, not Pydantic, selects explicit values before this
