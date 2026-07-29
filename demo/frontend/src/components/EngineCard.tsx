@@ -18,9 +18,9 @@ const STATUS_TEXT: Record<string, string> = {
 };
 
 const VERDICT_TEXT: Record<string, string> = {
-  ELIGIBLE: "Eligible — a simplified route qualifies",
-  INCOMPLETE_INFO: "Incomplete — more information needed",
-  OTHER_FORM_REQUIRED: "Another form — formal probate route",
+  ELIGIBLE: "Eligible. A simplified route qualifies.",
+  INCOMPLETE_INFO: "Incomplete. More information is needed.",
+  OTHER_FORM_REQUIRED: "Another form. The formal probate route applies.",
 };
 
 export type EngineStatus = "idle" | "pending" | "done" | "unavailable";
@@ -148,7 +148,7 @@ export function EngineCard({
         ) : error ? (
           <div className="verdict verdict-red" role="status">
             {error.type === "after_snapshot"
-              ? "Outside supported dates — sources end 2026-12-31"
+              ? "Outside supported dates. Sources end 2026-12-31."
               : error.type === "invalid_date"
                 ? "Invalid date in this case"
                 : "Case could not be read"}

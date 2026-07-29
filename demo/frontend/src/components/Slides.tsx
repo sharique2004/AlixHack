@@ -65,30 +65,30 @@ export function Slides({ onClose }: SlidesProps) {
       <div className="slide" onClick={next}>
         {i === 0 && (
           <div className="slide-body">
-            <span className="slide-kicker">This demo · one small problem, on purpose</span>
+            <span className="slide-kicker">A deliberately small demo</span>
             <h2>
               Is this estate eligible for
               <br />
               California's simple transfer?
             </h2>
             <p className="slide-lead">
-              That's the entire scope — one narrow eligibility check under California
-              probate law. Small enough to build the answer both ways and compare them
-              honestly:
+              That is the whole scope. One narrow eligibility check under California
+              probate law, small enough to build the answer two ways and compare them
+              honestly.
             </p>
             <ul className="slide-points">
               <li>
-                <strong>Ask an LLM every time</strong> — Gemini reads the statute for every
-                single case
+                <strong>Ask an LLM every time.</strong> Gemini reads the statute fresh for
+                every case.
               </li>
               <li>
-                <strong>Run the compiled law</strong> — the same statute written once into
-                proof-checked Lean 4 code
+                <strong>Or run the compiled law.</strong> The same statute, written once as
+                proof-checked Lean 4 code.
               </li>
             </ul>
             <p className="slide-foot">
-              Real statute (Prob. Code §13100–13650) · real proofs (Lean 4, machine-checked) ·
-              real meters (time, tokens, cost)
+              Real statute (Prob. Code §13100–13650), real proofs (Lean 4,
+              machine-checked), real meters (time, tokens, cost)
             </p>
           </div>
         )}
@@ -100,22 +100,22 @@ export function Slides({ onClose }: SlidesProps) {
             <PipelineToday />
             <ul className="slide-points">
               <li>
-                <strong>The context window is the bottleneck</strong> — retrieved documents
-                must fit inside it, so information gets cut, and the model misses facts it
-                was never shown
+                <strong>The context window is the bottleneck.</strong> Retrieved documents
+                have to fit inside it. Whatever gets cut, the model never sees, so it
+                misses facts.
               </li>
               <li>
-                <strong>Unknowns need an explicit contract</strong> — absent facts must stay
-                unresolved instead of being filled from plausible assumptions
+                <strong>Unknowns need an explicit contract.</strong> Missing facts must stay
+                unresolved instead of being replaced with plausible assumptions.
               </li>
               <li>
-                <strong>Every question is a fresh inference</strong> — latency, tokens, and
-                cost recur, and sampling can change the answer
+                <strong>Every question is a fresh inference.</strong> You pay the latency,
+                token cost, and dollars again, and sampling can change the answer.
               </li>
             </ul>
             <p className="slide-foot">
               The live comparison reports time, tokens, and estimated cost for the current
-              case
+              case.
             </p>
           </div>
         )}
@@ -123,25 +123,25 @@ export function Slides({ onClose }: SlidesProps) {
         {i === 2 && (
           <div className="slide-body">
             <span className="slide-kicker">What we built instead</span>
-            <h2>Use the LLM once — to write the code</h2>
+            <h2>Use the LLM once, to write the code</h2>
             <PipelineCompiled />
             <ul className="slide-points">
               <li>
-                <strong>Deterministic</strong> — the same typed input executes the same
-                decision procedure every time
+                <strong>Deterministic.</strong> The same typed input executes the same
+                decision procedure every time.
               </li>
               <li>
-                <strong>Verified</strong> — total-case exactness and partial-completion
-                soundness are theorem-backed, with executable coverage for all 12 shipped
-                samples
+                <strong>Verified.</strong> Total-case exactness and partial-completion
+                soundness are theorem-backed. The executable suite covers all 12 shipped
+                samples.
               </li>
               <li>
-                <strong>No inference tokens</strong> — each answer runs the compiled engine,
-                and the panel measures its runtime live
+                <strong>No inference tokens.</strong> Each answer runs the compiled engine,
+                and the panel measures its runtime live.
               </li>
               <li>
-                <strong>Honest about limits</strong> — refuses dates beyond its sources; a
-                missing fact means <em>“ask the family,”</em> never a guess
+                <strong>Honest about its limits.</strong> It refuses dates beyond its
+                sources, and a missing fact means asking the family, never guessing.
               </li>
             </ul>
             <p className="slide-close-line">The LLM is the compiler, not the judge.</p>
