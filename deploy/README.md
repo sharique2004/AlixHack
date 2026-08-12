@@ -1,123 +1,100 @@
 # Deploying Atlas to atlas.shariquekhatri.com
 
-## Why it isn't live yet
+Everything on Vercel: the frontend as static output, the API and the Lean
+engines as a Python function on the same deployment. One origin, one domain,
+no CORS.
 
-Nothing has been deployed. `atlas.shariquekhatri.com` returns
-`DNS_PROBE_POSSIBLE` because the DNS record does not exist.
+## Status — what is already done
 
-Verified 2026-08-12:
-
-```
-shariquekhatri.com  NS   dahlia.ns.cloudflare.com, brodie.ns.cloudflare.com   ✅ on Cloudflare
-shariquekhatri.com  A    216.198.79.1, 64.29.17.1                            (apex → Vercel)
-atlas.shariquekhatri.com                                                      does not exist
-```
-
-The zone is already on Cloudflare, so this is one DNS record away — once
-something is running to point it at.
-
-## Why Cloudflare alone cannot host it
-
-The engine is a **~95 MB native binary** (`settlement-api`; `probate-api` is
-another 94 MB). Cloudflare Workers and Pages Functions cap at roughly 10 MB and
-execute JS/WASM only. They cannot run it. Neither can Vercel's edge runtime,
-Netlify Functions, or any static host. A static-only deploy would leave the app
-showing labelled sample data with no live engine, which defeats the entire
-point of the project.
-
-So the engine needs a container host, and **one container serves everything** —
-the API and the frontend from the same origin. One deploy, one DNS record, no
-CORS, no build-time API URL.
-
-## 0. Revoke the leaked token first
-
-The Cloudflare token pasted into chat on 2026-08-12 is compromised. Cloudflare
-dashboard → My Profile → API Tokens → delete it. You do not need a Cloudflare
-API token for anything below; the one DNS record is a 30-second click in the
-dashboard.
-
-## 1. The image is built and verified
-
-Already done on 2026-08-12 — `docker build -f deploy/Dockerfile -t atlas .`
-produced an 899 MB image, and every check below was run against a live
-container:
-
-| check | result |
+| | |
 |---|---|
-| `GET /api/health` | `lean_engine: "binary"`, `settlement_engine: "binary"` |
-| `GET /` | 200 — frontend served from the same origin |
-| `GET /evidence` | 200 — SPA deep link survives a hard refresh |
-| `GET /api/nope` | `{"detail":"not found"}` — JSON, not the app shell |
-| Florida pair through the container | 2026-06-30 → `OTHER_FORM_REQUIRED`; 2026-07-01 → `ELIGIBLE` |
-| all 11 settlement samples | 10 assessments + 1 typed error envelope, no crashes |
+| Work committed and pushed to `sharique2004/AlixHack` | ✅ 6 commits |
+| Lean CI green on x86_64 | ✅ |
+| Engines built for **linux/amd64** and published | ✅ `engine-latest` prerelease, 75 MB each (stripped) |
+| Engine verified to run on linux/amd64 | ✅ 2026-06-30 → `OTHER_FORM_REQUIRED`, 2026-07-01 → `ELIGIBLE` |
+| Shared-library check | ✅ needs only glibc (`libc`, `libpthread`, `libdl`, `librt`, `libm`) — no libgmp, no libuv |
+| `vercel.json`, `api/index.py`, `deploy/vercel-build.sh` | ✅ pushed |
+| **Vercel project connected** | ❌ needs your account |
+| **DNS record** | ❌ needs your account |
 
-The Lean stage discharges every `by decide` regression, so a broken legal rule
-fails the image build rather than shipping.
+## Why this works on Vercel
 
-To re-run it locally:
+The engine is a ~75 MB native binary. Vercel's **Python** runtime allows 500 MB
+uncompressed per function (5 GB with large functions), so it fits with room to
+spare. It is the *Edge* runtime that cannot do this — not the Python one.
 
-```bash
-cd /Users/shariquekhatri/Alix/AlixHack
-docker build -f deploy/Dockerfile -t atlas .    # ~12 min cold, seconds cached
-docker run --rm -p 8080:8080 atlas              # → http://localhost:8080
+Vercel cannot *compile* Lean, so the binaries are built by the
+`engine-binaries` workflow on a native x86_64 runner and published as a rolling
+prerelease. `deploy/vercel-build.sh` downloads them at build time, refuses to
+continue if they are missing or truncated, and smoke-tests the engine before
+building the frontend — a deployment whose frontend built but whose engine did
+not would look fine and answer nothing.
+
+## 1. Revoke the leaked tokens
+
+The Cloudflare and Vercel tokens pasted into chat are compromised. Revoke both:
+
+- Vercel → Account Settings → Tokens
+- Cloudflare → My Profile → API Tokens
+
+Neither is needed below.
+
+## 2. Connect the project (2 minutes)
+
+Vercel dashboard → **Add New → Project** → import `sharique2004/AlixHack`.
+
+Leave every build setting alone — `vercel.json` already sets the build command,
+output directory, function memory, and routing. Then **Deploy**.
+
+Optional environment variable, only if you want the `/evidence` page's live
+Gemini comparison to work:
+
+```
+GEMINI_API_KEY = ...
 ```
 
-### One thing that will bite you
+Without it that one panel reports the key is missing; everything else,
+including the whole Atlas product, is unaffected.
 
-That local image is **linux/arm64** (Apple Silicon). Fly.io machines are
-**x86_64**, and an arm64 image will not boot there. Do **not** `docker push`
-this one. `fly deploy` uses a remote x86 builder by default, which is exactly
-what you want — let it build from the Dockerfile rather than shipping the local
-image. (Building amd64 locally works via `--platform linux/amd64` but compiles
-Lean under QEMU emulation and takes far longer.)
+## 3. Point the domain
 
-## 2. Deploy the container
+Vercel → the project → **Settings → Domains** → add `atlas.shariquekhatri.com`.
+Vercel will show the record it wants.
 
-Fly.io shown; Railway and Render are equivalent.
+`shariquekhatri.com` is already on Cloudflare (`dahlia`/`brodie.ns.cloudflare.com`),
+so add that record in the Cloudflare dashboard → DNS. Set the proxy to **DNS
+only** (grey cloud) so Vercel can issue the certificate; you can enable the
+proxy afterwards if you want.
 
-```bash
-brew install flyctl
-fly auth login
-fly launch --dockerfile deploy/Dockerfile --name atlas-sk --no-deploy \
-           --region sjc --vm-memory 1024
-fly secrets set GEMINI_API_KEY=...      # only for the /evidence LLM panel
-fly deploy --remote-only                # x86 builder — see the arm64 note above
-```
-
-Give it **≥1 GB RAM**: each request forks a ~95 MB binary. Note the hostname it
-prints (`atlas-sk.fly.dev`).
-
-```bash
-fly certs add atlas.shariquekhatri.com
-```
-
-## 3. One DNS record
-
-Cloudflare dashboard → `shariquekhatri.com` → DNS → Add record:
-
-| Type | Name | Target | Proxy |
-|---|---|---|---|
-| CNAME | `atlas` | `atlas-sk.fly.dev` | **DNS only** (grey cloud) until the cert issues, then proxy if you want |
-
-Fly's cert validation needs to see the origin, so leave it unproxied until
-`fly certs show atlas.shariquekhatri.com` reports the certificate is issued.
-
-## 4. Verify before you send anyone the link
+## 4. Verify before sending the link to anyone
 
 ```bash
 curl -s https://atlas.shariquekhatri.com/api/health
+#   expect "settlement_engine":"binary"
 ```
 
 Then open the site and load the two Florida samples back to back:
 
-- **died 2026-06-30** → `OTHER_FORM_REQUIRED`, summary administration ruled out
-- **died 2026-07-01** → `ELIGIBLE`, summary administration qualifies
+- **died 2026-06-30** → `OTHER_FORM_REQUIRED` — estate exceeds $75,000
+- **died 2026-07-01** → `ELIGIBLE` — under $150,000
 
-If both show the same verdict, or the page reports the engine unreachable, the
-container is not actually serving the engine — check `fly logs`.
+Same estate, one day apart. If both show the same verdict, or the page reports
+the engine unreachable, check the Vercel build log for the `fetching engines`
+step.
 
-## Cost
+## Known characteristics
 
-A shared-cpu-1x with 1 GB idles around $5/month. `fly scale count 1
---auto-stop` scales to zero when idle, at the price of a few seconds of cold
-start on the first request — worth mentioning to anyone you send the link to.
+- **Cold start.** The first request after idle stages a 75 MB binary into
+  `/tmp`, so expect a second or two. Warm requests run the engine in ~20 ms.
+  Worth mentioning to anyone you send the link to.
+- **Updating the law.** Editing anything under `SimpleProbate/` re-runs the
+  `engine-binaries` workflow on push, which rebuilds, re-checks the Florida
+  banding, and republishes. Redeploy on Vercel to pick it up.
+
+## Alternative: one container
+
+`deploy/Dockerfile` builds a single image with the engines, the API, and the
+frontend, verified working locally (health, SPA routing, the Florida pair, all
+11 samples). Use it for Fly/Railway/Render if you ever want to leave Vercel.
+Note it builds `linux/arm64` on Apple Silicon; use `fly deploy --remote-only`
+so the x86 builder produces the right architecture.
