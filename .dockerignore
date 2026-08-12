@@ -1,0 +1,9 @@
+.lake/
+.git/
+demo/frontend/node_modules/
+demo/frontend/dist/
+demo/backend/.venv/
+demo/backend/__pycache__/
+**/__pycache__/
+tools/*.json
+*.log
