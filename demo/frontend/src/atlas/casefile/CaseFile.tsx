@@ -1,0 +1,224 @@
+/**
+ * Case file — one screen.
+ *
+ * Three things, in the order a person actually needs them:
+ *   1. the answer          — what happens to this estate, in one sentence
+ *   2. where the money goes — two lists, one row per asset
+ *   3. what's left to do   — unknowns, flags, dates, folded into one block
+ *
+ * Everything else the engine returns (every route, the federal items, the
+ * engine's own notes) sits behind one disclosure. It is available, not shouted.
+ *
+ *   <CaseFile assessment={assessment} onEditFact={(path) => …} />
+ */
+
+import type { AssetClassification, SettlementAssessment } from "../types";
+import { formatDate, formatUSD } from "../types";
+import { describeFact, splitEstate } from "./format";
+import "./casefile.css";
+
+/** The one sentence at the top. Derived only from what the engine reported. */
+function headline(a: SettlementAssessment): { answer: string; detail: string | null } {
+  const FALLBACKS = ["ca_formal_probate_or_other", "fl_formal_administration"];
+  for (const j of a.jurisdictions) {
+    const win = j.routes.find((r) => r.status === "qualifies" && !FALLBACKS.includes(r.route));
+    if (win) {
+      return {
+        answer: `${win.label}.`,
+        detail: [j.code, win.citations[0]?.label, win.forms.join(", ")]
+          .filter(Boolean)
+          .join(" · "),
+      };
+    }
+  }
+  if (a.unresolved_facts.length > 0) {
+    const n = a.unresolved_facts.length;
+    return {
+      answer: n === 1 ? "One fact still decides this." : `${n} facts still decide this.`,
+      detail: "Nothing below is assumed. Fill these in and the answer resolves.",
+    };
+  }
+  return { answer: "Formal probate is required.", detail: "No simplified route is open." };
+}
+
+function AssetRow(props: { asset: AssetClassification }): JSX.Element {
+  const a = props.asset;
+  return (
+    <li className="cf2-row">
+      <span className="cf2-row__name">{a.name}</span>
+      <span className="cf2-row__val">{formatUSD(a.value_cents)}</span>
+    </li>
+  );
+}
+
+function Column(props: {
+  title: string;
+  total: number | null;
+  assets: AssetClassification[];
+  tone?: "wait";
+}): JSX.Element | null {
+  if (props.assets.length === 0) return null;
+  return (
+    <div className={`cf2-col${props.tone ? " cf2-col--wait" : ""}`}>
+      <div className="cf2-col__head">
+        <span>{props.title}</span>
+        <span className="cf2-col__total">{formatUSD(props.total)}</span>
+      </div>
+      <ul className="cf2-list">
+        {props.assets.map((a) => (
+          <AssetRow key={a.name} asset={a} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function CaseFile(props: {
+  assessment: SettlementAssessment;
+  onEditFact?: (path: string) => void;
+}): JSX.Element {
+  const a = props.assessment;
+  const split = splitEstate(a.asset_map);
+  const { answer, detail } = headline(a);
+  const critical = a.flags.filter((f) => f.severity === "critical");
+  const dated = a.deadlines.filter((d) => d.status === "computed" && d.date);
+
+  return (
+    <div className="atlas cf2">
+      {/* 1 — the answer */}
+      <section className="cf2-answer">
+        <h1>{answer}</h1>
+        {detail ? <p className="cf2-answer__detail">{detail}</p> : null}
+        <p className="cf2-answer__nums">
+          {formatUSD(a.probate_estate.known_subtotal_cents)} through probate
+          <span> · </span>
+          {formatUSD(split.nonProbateKnownCents)} passes outside it
+          {a.unresolved_facts.length > 0 ? (
+            <>
+              <span> · </span>
+              {a.unresolved_facts.length} still unknown
+            </>
+          ) : null}
+        </p>
+      </section>
+
+      {/* 2 — where the money goes. Nothing to show before any asset is entered. */}
+      {a.asset_map.length > 0 ? (
+      <section className="cf2-block">
+        <h2>Where the money goes.</h2>
+        <div className="cf2-cols">
+          <Column
+            title="Passes outside probate"
+            total={split.nonProbateKnownCents}
+            assets={split.nonProbate}
+          />
+          <Column
+            title="Through probate"
+            total={split.probateKnownCents}
+            assets={split.probate}
+          />
+          <Column
+            title="Not yet placed"
+            total={split.unknownKnownCents}
+            assets={split.unknown}
+            tone="wait"
+          />
+        </div>
+      </section>
+      ) : null}
+
+      {/* 3 — what's left to do */}
+      {critical.length > 0 || a.unresolved_facts.length > 0 || dated.length > 0 ? (
+        <section className="cf2-block">
+          <h2>What's left.</h2>
+
+          {critical.map((f) => (
+            <div key={f.id} className="cf2-item cf2-item--crit">
+              <strong>{f.title}</strong>
+              <span>{f.action}</span>
+            </div>
+          ))}
+
+          {a.unresolved_facts.slice(0, 6).map((path) => {
+            const d = describeFact(path, a.asset_map);
+            return (
+              <button
+                key={path}
+                type="button"
+                className="cf2-item cf2-item--ask"
+                onClick={() => props.onEditFact?.(path)}
+              >
+                {/* Lead with the question. The owner only earns a line when it
+                    names a specific asset — "The decedent" on every row is noise. */}
+                <strong>{d.label}</strong>
+                <span>{d.owner && d.owner !== "The decedent" ? d.owner : ""}</span>
+              </button>
+            );
+          })}
+
+          {dated.map((d) => (
+            <div key={d.id} className="cf2-item">
+              <strong>{formatDate(d.date)}</strong>
+              <span>{d.label}</span>
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {/* everything else — available, not shouted */}
+      <details className="cf2-more">
+        <summary>Every route, the federal items, and the engine's notes</summary>
+        <div className="cf2-more__body">
+          {a.jurisdictions.map((j) => (
+            <div key={`${j.code}-${j.role}`} className="cf2-more__group">
+              <h3>
+                {j.code} <span>{j.role}</span>
+              </h3>
+              {j.routes.map((r) => (
+                <div key={r.route} className="cf2-more__row">
+                  <span className={`cf2-dot cf2-dot--${r.status}`} aria-hidden="true" />
+                  <span className="cf2-more__label">{r.label}</span>
+                  <span className="cf2-more__cite mono">{r.citations[0]?.label ?? ""}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+          {a.federal.length > 0 ? (
+            <div className="cf2-more__group">
+              <h3>Federal</h3>
+              {a.federal.map((f) => (
+                <div key={f.item} className="cf2-more__row">
+                  <span className="cf2-more__label">{f.label}</span>
+                  <span className="cf2-more__cite mono">{f.status.replace(/_/g, " ")}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {a.notes.length > 0 ? (
+            <div className="cf2-more__group">
+              <h3>Notes</h3>
+              {a.notes.map((n, i) => (
+                <p key={i} className="cf2-more__note">
+                  {n}
+                </p>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </details>
+
+      <footer className="cf2-footer">
+        <p>
+          This proves the consequences of the facts supplied. It does not verify that those
+          facts are true, and it is not legal advice.
+        </p>
+        <p>
+          Independent prototype by Sharique Khatri. Not affiliated with, endorsed by, or
+          connected to Alix.
+        </p>
+      </footer>
+    </div>
+  );
+}
+
+export default CaseFile;

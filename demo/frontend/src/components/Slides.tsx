@@ -133,12 +133,13 @@ export function Slides({ onClose }: SlidesProps) {
                 <strong>12 out of 12</strong> on the same audit.
               </li>
               <li>
-                <strong>Verified.</strong> Checked against the statutory predicates on{" "}
-                <strong>435,456 cases</strong> with zero mismatches.
+                <strong>Machine-checked.</strong> <strong>79 lemmas</strong> about the
+                statutory predicates are proved every time the code compiles. No unproved
+                assumptions.
               </li>
               <li>
-                <strong>Instant and nearly free.</strong> About 20 ms of compute and half
-                a millionth of a dollar per case. Zero tokens.
+                <strong>Instant and nearly free.</strong> About 17 ms of compute and two
+                ten-millionths of a dollar per case. Zero tokens.
               </li>
               <li>
                 <strong>Honest about its limits.</strong> It refuses dates beyond its

@@ -1,0 +1,602 @@
+/* Case file — view styles.
+   Built on design/tokens.css: no palette is restated here, no box-shadow is
+   introduced, and lavender is reserved for action (focus rings and buttons).
+   Everything is scoped under .cf so this view can be dropped anywhere. */
+
+.cf {
+  color: var(--ink);
+}
+
+.cf__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-section);
+}
+
+/* ---------------------------------------------------------------- type */
+
+.cf .cf-h {
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin: 0;
+}
+.cf .cf-h--xl { font-size: clamp(30px, 4.1vw, 46px); }
+.cf .cf-h--lg { font-size: clamp(26px, 2.6vw, 32px); }
+.cf .cf-h--md { font-size: 22px; }
+.cf .cf-h--sm { font-size: 18px; }
+
+.cf .cf-eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-60);
+  letter-spacing: 0;
+  margin-bottom: 10px;
+}
+
+.cf .cf-lede {
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink-60);
+  max-width: 58ch;
+  margin: 12px 0 0;
+  text-wrap: pretty;
+}
+
+.cf .atlas-chip { white-space: nowrap; }
+.cf .cf-cite { display: inline-block; }
+.cf .cf-cites { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.cf a.cf-cite { color: var(--blue); text-decoration: none; }
+.cf a.cf-cite:hover { text-decoration: underline; }
+
+/* ------------------------------------------------------------ sections */
+
+.cf .cf-section { overflow: hidden; }
+
+.cf .cf-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+  margin-bottom: 34px;
+}
+.cf .cf-head__right { flex: 0 0 auto; }
+
+.cf .atlas-section--ink .cf-eyebrow,
+.cf .atlas-section--navy .cf-eyebrow,
+.cf .cf-head--onDark .cf-eyebrow { color: rgba(255, 255, 255, 0.6); }
+.cf .atlas-section--ink .cf-lede,
+.cf .atlas-section--navy .cf-lede,
+.cf .cf-head--onDark .cf-lede { color: rgba(255, 255, 255, 0.72); }
+
+/* --------------------------------------------------------- inner tints */
+/* Two additions to the token set's inner cards, using the status tints
+   already defined there. Text stays ink; the tint carries the state. */
+.cf .inner--wait { background: var(--wait-bg); color: var(--ink); }
+.cf .inner--crit { background: var(--crit-bg); color: var(--ink); }
+/* A framed card sitting on a dark section must not inherit the section's
+   white text onto a pale inner card. */
+.cf .inner--bone,
+.cf .inner--cyan,
+.cf .inner--lav,
+.cf .inner--paper { color: var(--ink); }
+
+/* ------------------------------------------------------------ the hero */
+
+.cf .cf-hero { display: flex; flex-direction: column; gap: 34px; }
+
+.cf .cf-hero__stamp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.cf .cf-hero__engine {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+}
+
+.cf .cf-hero__verdict {
+  color: var(--paper);
+  max-width: 21em;
+  text-wrap: pretty;
+}
+.cf .cf-hero__verdict--second { color: rgba(255, 255, 255, 0.6); }
+
+.cf .cf-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 12px;
+}
+.cf .cf-stat > .inner { padding: 18px; }
+.cf .cf-stat__lead { font-size: 12px; color: var(--ink-60); }
+.cf .cf-stat__value { margin: 8px 0 6px; }
+.cf .cf-stat__note { font-size: 12px; line-height: 1.35; color: var(--ink-60); }
+
+/* --------------------------------------------------------- fact chips */
+
+.cf .cf-facts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.cf .cf-fact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  row-gap: 2px;
+  max-width: 100%;
+  padding: 7px 12px;
+  border-radius: var(--r-control);
+  background: var(--paper);
+  border: 1px solid var(--ink-12);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink);
+  text-align: left;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.cf .cf-fact--quiet { background: transparent; }
+.cf .cf-fact__label { flex: 1 1 auto; }
+.cf .cf-fact__owner { color: var(--ink-60); }
+.cf .cf-fact__go { margin-left: 7px; color: var(--ink-40); }
+.cf .cf-fact__path { flex: 1 1 100%; font-family: var(--mono); font-size: 10.5px; color: var(--ink-40); }
+.cf button.cf-fact--live { cursor: pointer; }
+.cf button.cf-fact--live:hover { border-color: var(--ink); }
+.cf button.cf-fact--live:hover .cf-fact__go { color: var(--ink); }
+.cf button.cf-fact--live:focus-visible { outline: 2px solid var(--lavender); outline-offset: 2px; }
+
+/* ----------------------------------------------------------- reasons */
+
+.cf .cf-reasons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.cf .cf-reasons li { display: flex; flex-direction: column; gap: 3px; }
+.cf .cf-reasons__text { font-size: 13.5px; line-height: 1.42; color: var(--ink-80); }
+.cf .cf-reasons__id { font-size: 10.5px; color: var(--ink-40); }
+
+/* --------------------------------------------------------- empty state */
+
+.cf .cf-empty {
+  background: rgba(17, 16, 13, 0.035);
+  border-radius: var(--r-panel);
+  padding: 22px;
+}
+.cf .cf-empty__title { font-family: var(--serif); font-size: 20px; letter-spacing: -0.03em; }
+.cf .cf-empty__body { font-size: 13.5px; line-height: 1.45; color: var(--ink-60); margin: 6px 0 0; max-width: 52ch; }
+.cf .atlas-section--navy .cf-empty,
+.cf .atlas-section--ink .cf-empty { background: rgba(255, 255, 255, 0.07); }
+.cf .atlas-section--navy .cf-empty__body,
+.cf .atlas-section--ink .cf-empty__body { color: rgba(255, 255, 255, 0.7); }
+
+/* ------------------------------------------------------- the asset map */
+
+.cf .cf-subtotal { width: 290px; max-width: 100%; }
+.cf .cf-subtotal > .inner { padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+.cf .cf-subtotal__lead { font-size: 12px; color: var(--ink-60); }
+.cf .cf-subtotal__note { font-size: 12px; line-height: 1.35; color: var(--ink-60); }
+.cf .cf-subtotal .cf-facts { margin-top: 4px; }
+
+.cf .cf-unresolved {
+  background: var(--wait-bg);
+  border-radius: var(--r-panel);
+  padding: 22px;
+  margin-bottom: 26px;
+}
+.cf .cf-unresolved__head { margin-bottom: 16px; }
+.cf .cf-unresolved__note {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-80);
+  max-width: 62ch;
+  margin: 8px 0 0;
+}
+.cf .cf-unresolved__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 10px;
+}
+
+.cf .cf-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+/* The two halves of the estate are told apart by surface colour, not by an
+   accent rule: a 4px edge fights the rounded corners, and Alix never uses one
+   (DESIGN-ALIX.md §3 — depth comes from solid blocks, borders stay hairline).
+   The white-framed asset cards read cleanly against either tint. */
+.cf .cf-col {
+  border: 1px solid var(--ink-08);
+  border-radius: var(--r-panel);
+  padding: 18px;
+  background: rgba(188, 229, 234, 0.3); /* --cyan wash: passes outside probate */
+}
+.cf .cf-col--emphasis { background: var(--bone); } /* the probate estate — the heavier surface */
+.cf .cf-col__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+.cf .cf-col__note { font-size: 12.5px; line-height: 1.4; color: var(--ink-60); max-width: 34ch; margin-top: 8px; }
+.cf .cf-col__total { text-align: right; flex: 0 0 auto; }
+.cf .cf-col__totalNote { font-size: 11.5px; color: var(--ink-40); margin-top: 6px; }
+.cf .cf-col__cards { display: flex; flex-direction: column; gap: 10px; }
+
+.cf .cf-asset > .inner { padding: 18px; display: flex; flex-direction: column; gap: 11px; }
+.cf .cf-asset__top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.cf .cf-asset__name { font-size: 14.5px; font-weight: 500; line-height: 1.28; }
+.cf .cf-asset__value { font-size: 26px; white-space: nowrap; }
+.cf .cf-asset__value--unknown {
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: -0.011em;
+  color: var(--wait-fg);
+}
+.cf .cf-asset__reason { font-size: 13.5px; line-height: 1.45; color: var(--ink-80); margin: 0; max-width: 84ch; }
+.cf .cf-asset__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.cf .cf-basis {
+  font-size: 10.5px;
+  color: var(--ink-60);
+  background: rgba(17, 16, 13, 0.06);
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
+}
+.cf .cf-counts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cf .cf-counts__lead { font-size: 11px; color: var(--ink-40); }
+.cf .cf-counts__item {
+  font-size: 11px;
+  color: var(--ink-60);
+  border: 1px solid var(--ink-12);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+}
+.cf .cf-asset__ask { border-top: 1px solid rgba(17, 16, 13, 0.13); padding-top: 12px; }
+.cf .cf-asset__askLead { font-size: 12.5px; font-weight: 500; color: var(--wait-fg); margin-bottom: 9px; }
+
+/* ------------------------------------------------------- jurisdictions */
+
+.cf .cf-jurs__list { display: flex; flex-direction: column; gap: 34px; }
+.cf .cf-jur + .cf-jur { border-top: 1px solid var(--ink-12); padding-top: 34px; }
+
+.cf .cf-jur__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+.cf .cf-jur__title { display: flex; align-items: center; gap: 16px; }
+.cf .cf-jur__code {
+  font-family: var(--serif);
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-inner);
+  background: var(--ink);
+  color: var(--paper);
+}
+.cf .cf-jur__role { font-size: 12.5px; color: var(--ink-60); margin-top: 6px; max-width: 46ch; }
+.cf .cf-jur__verdict { text-align: right; flex: 0 0 auto; }
+.cf .cf-jur__verdictId { font-size: 10.5px; color: var(--ink-40); margin-top: 7px; }
+
+.cf .cf-jur--ancillary .cf-jur__code {
+  background: transparent;
+  color: var(--ink-60);
+  border: 1px solid var(--ink-12);
+  width: 46px;
+  height: 46px;
+  font-size: 20px;
+}
+.cf .cf-jur--ancillary .cf-h--md { font-size: 19px; }
+
+.cf .cf-jur__routes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px;
+}
+.cf .cf-route > .inner { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.cf .cf-route__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+.cf .cf-route__label { font-size: 15px; font-weight: 500; line-height: 1.28; }
+.cf .cf-route__id { font-size: 10.5px; color: var(--ink-40); margin-top: 4px; }
+.cf .cf-route__ask { font-size: 13.5px; font-weight: 500; color: var(--wait-fg); }
+.cf .cf-route--does_not_qualify .cf-route__label { color: var(--out-fg); }
+.cf .cf-route__foot { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.cf .cf-forms { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cf .cf-forms__lead { font-size: 11px; color: var(--ink-40); }
+.cf .cf-forms__item {
+  font-size: 11px;
+  color: var(--ink);
+  border: 1px solid var(--ink-12);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+}
+
+/* -------------------------------------------------------------- federal */
+
+.cf .cf-fedsec__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+.cf .cf-fed > .inner { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.cf .cf-fed__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+.cf .cf-fed__label { font-size: 15px; font-weight: 500; line-height: 1.28; }
+.cf .cf-fed__id { font-size: 10.5px; color: var(--ink-40); margin-top: 4px; }
+.cf .cf-fed__ledger { display: flex; flex-wrap: wrap; gap: 28px; margin: 0; }
+.cf .cf-fed__ledger dt { font-size: 11px; color: var(--ink-40); }
+.cf .cf-fed__ledger dd { margin: 4px 0 0; font-size: 14px; }
+
+/* ---------------------------------------------------------------- flags */
+
+.cf .cf-flags__list { display: flex; flex-direction: column; gap: 12px; }
+.cf .cf-flag > .inner { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.cf .cf-flag__top { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.cf .cf-flag__id { font-size: 10.5px; color: var(--ink-40); }
+.cf .cf-flag__title { max-width: 40ch; }
+.cf .cf-flag--critical .cf-flag__title { color: var(--crit-fg); }
+.cf .cf-flag__detail { font-size: 14px; line-height: 1.5; color: var(--ink-80); margin: 0; max-width: 74ch; }
+.cf .cf-flag__action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  background: rgba(17, 16, 13, 0.05);
+  border-radius: var(--r-control);
+  padding: 12px 14px;
+}
+.cf .cf-flag__actionLead { font-size: 11px; font-weight: 600; color: var(--ink-60); }
+.cf .cf-flag__actionText { font-size: 13.5px; line-height: 1.4; }
+.cf .cf-flag__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.cf .cf-flag__trigger { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cf .cf-flag__triggerLead { font-size: 11px; color: var(--ink-40); }
+.cf .cf-trigger {
+  font-size: 11px;
+  color: var(--ink-60);
+  background: rgba(17, 16, 13, 0.06);
+  border: 0;
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  font-family: var(--sans);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.cf button.cf-trigger--live { cursor: pointer; }
+.cf button.cf-trigger--live:hover { background: rgba(17, 16, 13, 0.12); color: var(--ink); }
+.cf button.cf-trigger--live:focus-visible { outline: 2px solid var(--lavender); outline-offset: 2px; }
+
+/* ------------------------------------------------------------ deadlines */
+
+.cf .cf-dls__rail { list-style: none; margin: 0; padding: 0; }
+.cf .cf-dl {
+  position: relative;
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  padding: 20px 0 20px 30px;
+}
+.cf .cf-dl::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--ink-12);
+}
+.cf .cf-dl:first-child::before { top: 26px; }
+.cf .cf-dl:last-child::before { bottom: calc(100% - 26px); }
+.cf .cf-dl__mark {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bone);
+  border: 3px solid var(--ink);
+}
+.cf .cf-dl--past .cf-dl__mark { border-color: var(--ink-40); }
+.cf .cf-dl--awaiting_event .cf-dl__mark,
+.cf .cf-dl--needs_information .cf-dl__mark { border-color: var(--wait-fg); }
+
+.cf .cf-dl__date { font-size: 21px; }
+.cf .cf-dl--past .cf-dl__date { color: var(--ink-40); }
+.cf .cf-dl__undated { font-size: 14px; font-weight: 500; color: var(--wait-fg); }
+.cf .cf-dl__rel { font-size: 11.5px; color: var(--ink-60); margin-top: 5px; }
+.cf .cf-dl__label { font-size: 16px; font-weight: 500; }
+.cf .cf-dl--past .cf-dl__label { color: var(--ink-60); }
+.cf .cf-dl__note { font-size: 13px; line-height: 1.45; color: var(--ink-60); margin-top: 5px; max-width: 58ch; }
+.cf .cf-dl__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; }
+.cf .cf-dl__id { font-size: 10.5px; color: var(--ink-40); }
+
+/* ------------------------------------------------------------- unknowns */
+
+.cf .cf-unknowns__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
+  gap: 12px;
+}
+.cf .cf-ask > .inner { padding: 18px; display: flex; }
+.cf .cf-ask__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cf .cf-ask__btn:focus-visible { outline: 2px solid var(--lavender); outline-offset: 4px; border-radius: 4px; }
+.cf .cf-ask__owner { font-size: 11.5px; font-weight: 500; color: var(--wait-fg); }
+.cf .cf-ask__label { max-width: 26ch; }
+.cf .cf-ask__path { font-family: var(--mono); font-size: 10.5px; color: var(--ink-40); }
+.cf .cf-ask__waiting { margin-top: 6px; }
+.cf .cf-ask__waitingLead { font-size: 11px; color: var(--ink-40); }
+.cf .cf-ask__waiting ul { list-style: none; margin: 5px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.cf .cf-ask__waiting li { font-size: 12.5px; line-height: 1.35; color: var(--ink-80); padding-left: 14px; position: relative; }
+.cf .cf-ask__waiting li::before { content: "—"; position: absolute; left: 0; color: var(--ink-40); }
+.cf .cf-ask__cta { font-size: 12.5px; font-weight: 500; margin-top: auto; padding-top: 12px; }
+.cf .cf-ask__btn:hover .cf-ask__cta { text-decoration: underline; }
+
+/* --------------------------------------------------------- next actions */
+
+.cf .cf-next__list { list-style: none; margin: 0; padding: 0; }
+.cf .cf-step {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 18px;
+  padding: 18px 0;
+  border-top: 1px solid var(--ink-08);
+}
+.cf .cf-step:first-child { border-top: 0; padding-top: 0; }
+.cf .cf-step__n { font-family: var(--serif); font-size: 26px; color: var(--ink-40); line-height: 1.1; }
+.cf .cf-step__label { font-size: 16px; line-height: 1.35; }
+.cf .cf-step__id { font-size: 10.5px; color: var(--ink-40); margin-top: 4px; }
+.cf .cf-step__ready { font-size: 12.5px; color: var(--ok-fg); margin-top: 8px; }
+.cf .cf-step__blocked { margin-top: 10px; }
+.cf .cf-step__blockedLead { display: block; font-size: 12px; color: var(--wait-fg); margin-bottom: 8px; }
+.cf .cf-step--blocked .cf-step__label { color: var(--ink-80); }
+
+/* ------------------------------------------------------- notes + footer */
+
+.cf .cf-notes { padding: 0 4px; }
+.cf .cf-notes ul { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cf .cf-notes li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-60);
+  max-width: 78ch;
+  padding-left: 16px;
+  position: relative;
+}
+.cf .cf-notes li::before { content: "—"; position: absolute; left: 0; color: var(--ink-40); }
+
+.cf .cf-footer {
+  border-top: 1px solid var(--ink-08);
+  padding: 22px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cf .cf-footer p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-60); max-width: 76ch; }
+.cf .cf-footer .cf-footer__attrib { color: var(--ink-40); }
+
+/* ----------------------------------------------------------- responsive */
+
+@media (max-width: 900px) {
+  .cf .cf-cols { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 820px) {
+  .cf { --pad-section: 26px; --gap-section: 34px; }
+  .cf .cf-head { flex-direction: column; gap: 22px; }
+  .cf .cf-head__right { width: 100%; }
+  .cf .cf-subtotal { width: 100%; }
+  .cf .cf-dl { grid-template-columns: 1fr; gap: 10px; }
+  .cf .cf-jur__head { flex-direction: column; gap: 14px; }
+  .cf .cf-jur__verdict { text-align: left; }
+  .cf .cf-col__head { flex-direction: column; }
+  .cf .cf-col__total { text-align: left; }
+}
+
+/* ==========================================================================
+   Simplified case file (.cf2) — one screen, three things.
+   Plain rows, no nested cards, no per-section eyebrow/lede furniture.
+   ========================================================================== */
+
+.cf2 { max-width: 1040px; margin: 0 auto; padding: 0 24px 96px; }
+
+/* 1 — the answer */
+.cf2-answer { padding: 64px 0 40px; border-bottom: 1px solid var(--ink-08); }
+.cf2-answer h1 {
+  font-family: var(--serif); font-weight: 400; letter-spacing: -0.04em;
+  line-height: 1.04; font-size: clamp(34px, 5vw, 56px); margin: 0;
+}
+.cf2-answer__detail { margin: 14px 0 0; font-size: 15px; color: var(--ink-60); }
+.cf2-answer__nums { margin: 26px 0 0; font-size: 15px; color: var(--ink-80); }
+.cf2-answer__nums span { color: var(--ink-40); }
+
+/* 2 & 3 — blocks */
+.cf2-block { padding: 44px 0; border-bottom: 1px solid var(--ink-08); }
+.cf2-block h2 {
+  font-family: var(--serif); font-weight: 400; letter-spacing: -0.03em;
+  font-size: 26px; margin: 0 0 22px;
+}
+
+.cf2-cols { display: grid; grid-template-columns: 1fr; gap: 30px; }
+.cf2-col__head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 13px; font-weight: 500; padding-bottom: 9px;
+  border-bottom: 1px solid var(--ink-12);
+}
+.cf2-col__total { font-variant-numeric: tabular-nums; }
+.cf2-col--wait .cf2-col__head { color: var(--wait-fg); border-bottom-color: var(--wait-fg); }
+
+.cf2-list { list-style: none; margin: 0; padding: 0; }
+.cf2-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: baseline;
+  padding: 11px 0; border-bottom: 1px solid var(--ink-08); font-size: 14px;
+}
+.cf2-row:last-child { border-bottom: 0; }
+.cf2-row__val { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+/* 3 — items */
+.cf2-item {
+  display: flex; gap: 14px; align-items: baseline; width: 100%; text-align: left;
+  padding: 13px 0; border: 0; border-bottom: 1px solid var(--ink-08);
+  background: none; font: inherit; color: inherit; font-size: 14px;
+}
+.cf2-item strong { font-weight: 500; min-width: 190px; }
+.cf2-item span { color: var(--ink-60); font-size: 13.5px; }
+.cf2-item--crit strong { color: var(--crit-fg); }
+.cf2-item--ask { cursor: pointer; }
+.cf2-item--ask:hover strong { color: var(--blue); }
+.cf2-item--ask:focus-visible { outline: 2px solid var(--lavender); outline-offset: 3px; }
+
+/* everything else */
+.cf2-more { padding: 30px 0; }
+.cf2-more summary {
+  cursor: pointer; font-size: 13.5px; color: var(--ink-60); padding: 6px 0;
+}
+.cf2-more summary:hover { color: var(--ink); }
+.cf2-more__body { padding-top: 22px; display: flex; flex-direction: column; gap: 26px; }
+.cf2-more__group h3 {
+  font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-40); margin: 0 0 10px;
+}
+.cf2-more__group h3 span { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.cf2-more__row {
+  display: flex; gap: 11px; align-items: baseline;
+  padding: 7px 0; font-size: 13.5px; border-bottom: 1px solid var(--ink-08);
+}
+.cf2-more__label { flex: 1; }
+.cf2-more__cite { color: var(--ink-40); font-size: 11px; }
+.cf2-more__note { font-size: 13px; color: var(--ink-60); margin: 0 0 8px; }
+.cf2-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-12); flex: none; }
+.cf2-dot--qualifies { background: var(--ok-fg); }
+.cf2-dot--needs_information { background: var(--wait-fg); }
+
+.cf2-footer { padding-top: 30px; font-size: 12px; color: var(--ink-40); }
+.cf2-footer p { margin: 0 0 6px; max-width: 62ch; }
+
+@media (min-width: 760px) {
+  .cf2-cols { grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 36px; }
+}

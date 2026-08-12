@@ -443,9 +443,9 @@ export default function App() {
               </label>
               <span
                 className="chip chip-amber"
-                title="Ground-truth audit: 23 of 36 Gemini runs matched the verified answer (3 runs per case)"
+                title="Recorded result of the 2026-07-28 ground-truth audit (AUDIT.md): 23 of 36 Gemini runs matched the verified answer, 3 runs per case. It is a record of that dated run, not a live score — re-sampling a non-deterministic model produces new numbers rather than confirming old ones. Reproduce with: python3 tools/run_audit.py --llm 3 (needs a GEMINI_API_KEY)."
               >
-                23/36 runs correct
+                23/36 runs correct · audit of 2026-07-28
               </span>
             </div>
           }
@@ -510,9 +510,9 @@ export default function App() {
             <div className="llm-controls">
               <span
                 className="chip chip-green"
-                title="435,456 fuzzed cases with zero disagreement against the statutory predicates; 12/12 ground-truth audit"
+                title="79 machine-checked lemmas discharged at compile time (SimpleProbate/Examples.lean, Partial.lean); 12/12 on the independent ground-truth audit in AUDIT.md"
               >
-                Verified · 435,456 cases · 12/12 audit
+                Verified · 79 checked lemmas · 12/12 audit
               </span>
               <span className="chip chip-blue">Re-answers live as you drag</span>
             </div>
