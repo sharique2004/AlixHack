@@ -1,0 +1,3698 @@
+{
+  "harness": "tools/fuzz_probate.py",
+  "engine_binary": "tools/sabotage_engine.py",
+  "seed": 20260812,
+  "cases": 60,
+  "engine_invocations": 471,
+  "invariant_checks": 531,
+  "unknown_probes_per_case": 3,
+  "jobs": 10,
+  "wall_seconds": 4.81,
+  "cases_per_second": 12.5,
+  "violations": 22,
+  "violations_by_invariant": {
+    "unknown_safety": 4,
+    "aggregation": 18
+  },
+  "coverage": {
+    "base.verdict.ELIGIBLE": 32,
+    "base.verdict.INCOMPLETE_INFO": 21,
+    "base.verdict.OTHER_FORM_REQUIRED": 7,
+    "monotonicity.exercised": 51,
+    "monotonicity.mutation_changed_the_answer": 13,
+    "monotonicity.vacuous_no_known_values": 9,
+    "route.direct_transfer.does_not_qualify": 30,
+    "route.direct_transfer.needs_information": 12,
+    "route.direct_transfer.qualifies": 18,
+    "route.formal_probate_or_other_procedure.does_not_qualify": 32,
+    "route.formal_probate_or_other_procedure.needs_information": 21,
+    "route.formal_probate_or_other_procedure.qualifies": 7,
+    "route.personal_property_affidavit.does_not_qualify": 34,
+    "route.personal_property_affidavit.needs_information": 7,
+    "route.personal_property_affidavit.qualifies": 19,
+    "route.primary_residence_petition.does_not_qualify": 50,
+    "route.primary_residence_petition.needs_information": 6,
+    "route.primary_residence_petition.qualifies": 4,
+    "route.small_value_real_property_affidavit.does_not_qualify": 52,
+    "route.small_value_real_property_affidavit.needs_information": 7,
+    "route.small_value_real_property_affidavit.qualifies": 1,
+    "route.spousal_property_petition.does_not_qualify": 25,
+    "route.spousal_property_petition.needs_information": 20,
+    "route.spousal_property_petition.qualifies": 15,
+    "unknown_safety.exercised": 180,
+    "unknown_safety.mutation_changed_the_answer": 51
+  },
+  "findings": [
+    {
+      "invariant": "unknown_safety",
+      "case_index": 5,
+      "detail": "personal_property_affidavit: needs_information became qualifies after nulling estate.inventory_complete",
+      "case": {
+        "death_date": null,
+        "days_since_death": 85,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "written_personal_representative_consent",
+        "survivor_status": "none",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "personal",
+              "gross_value_cents": 16625000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-1",
+              "kind": "california_real",
+              "gross_value_cents": 158819,
+              "encumbrances_cents": 844150,
+              "treatment": "government_benefit",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-2",
+              "kind": "personal",
+              "gross_value_cents": 34982759,
+              "encumbrances_cents": 3993924,
+              "treatment": "transfer_on_death",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "mutated_case": {
+        "death_date": null,
+        "days_since_death": 85,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "written_personal_representative_consent",
+        "survivor_status": "none",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "personal",
+              "gross_value_cents": 16625000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-1",
+              "kind": "california_real",
+              "gross_value_cents": 158819,
+              "encumbrances_cents": 844150,
+              "treatment": "government_benefit",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-2",
+              "kind": "personal",
+              "gross_value_cents": 34982759,
+              "encumbrances_cents": 3993924,
+              "treatment": "transfer_on_death",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date"
+            ],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_surviving_spouse_or_partner",
+                "text": "There is no surviving spouse or registered domestic partner"
+              }
+            ],
+            "route": "spousal_property_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      },
+      "mutated_result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_surviving_spouse_or_partner",
+                "text": "There is no surviving spouse or registered domestic partner"
+              }
+            ],
+            "route": "spousal_property_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 13,
+      "detail": "fallback row is needs_information, expected does_not_qualify",
+      "case": {
+        "death_date": {
+          "year": 2024,
+          "month": 5,
+          "day": 20
+        },
+        "days_since_death": null,
+        "six_months_elapsed": null,
+        "claimant_is_successor": false,
+        "no_superior_right": null,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": "no_proceeding",
+        "survivor_status": null,
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "personal",
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            },
+            {
+              "name": "asset-1",
+              "kind": null,
+              "gross_value_cents": 194140,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": true,
+              "is_primary_residence": true
+            }
+          ]
+        },
+        "target_index": 1
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "estate.assets[1].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              },
+              {
+                "id": "debts_not_paid",
+                "text": "Funeral, last-illness, and unsecured debts are not all paid"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "survivor_status",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.assets[1].treatment",
+              "survivor_status",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 13,
+      "detail": "overall is 'unresolved', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": {
+          "year": 2024,
+          "month": 5,
+          "day": 20
+        },
+        "days_since_death": null,
+        "six_months_elapsed": null,
+        "claimant_is_successor": false,
+        "no_superior_right": null,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": "no_proceeding",
+        "survivor_status": null,
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "personal",
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            },
+            {
+              "name": "asset-1",
+              "kind": null,
+              "gross_value_cents": 194140,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": true,
+              "is_primary_residence": true
+            }
+          ]
+        },
+        "target_index": 1
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "estate.assets[1].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              },
+              {
+                "id": "debts_not_paid",
+                "text": "Funeral, last-illness, and unsecured debts are not all paid"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "survivor_status",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.assets[1].treatment",
+              "survivor_status",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 19,
+      "detail": "fallback row is needs_information, expected does_not_qualify",
+      "case": {
+        "death_date": {
+          "year": 2020,
+          "month": 3,
+          "day": 14
+        },
+        "days_since_death": 80,
+        "six_months_elapsed": false,
+        "claimant_is_successor": null,
+        "no_superior_right": false,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": null,
+        "survivor_status": "registered_domestic_partner",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": true
+            },
+            {
+              "name": "asset-1",
+              "kind": "california_real",
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 1
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "estate.assets[1].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "superior_right_exists",
+                "text": "Someone else has a superior right to the property"
+              },
+              {
+                "id": "six_month_period_not_met",
+                "text": "Six months have not elapsed since death"
+              },
+              {
+                "id": "debts_not_paid",
+                "text": "Funeral, last-illness, and unsecured debts are not all paid"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [
+              "estate.assets[1].treatment",
+              "estate.assets[1].is_primary_residence",
+              "claimant_is_successor",
+              "authority",
+              "estate.assets[0].gross_value_cents",
+              "estate.inventory_complete"
+            ],
+            "reasons": [],
+            "route": "primary_residence_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.assets[1].treatment",
+              "estate.assets[1].is_primary_residence",
+              "claimant_is_successor",
+              "authority",
+              "estate.assets[0].gross_value_cents",
+              "estate.inventory_complete",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 19,
+      "detail": "overall is 'unresolved', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": {
+          "year": 2020,
+          "month": 3,
+          "day": 14
+        },
+        "days_since_death": 80,
+        "six_months_elapsed": false,
+        "claimant_is_successor": null,
+        "no_superior_right": false,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": null,
+        "survivor_status": "registered_domestic_partner",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": true
+            },
+            {
+              "name": "asset-1",
+              "kind": "california_real",
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 1
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "estate.assets[1].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "superior_right_exists",
+                "text": "Someone else has a superior right to the property"
+              },
+              {
+                "id": "six_month_period_not_met",
+                "text": "Six months have not elapsed since death"
+              },
+              {
+                "id": "debts_not_paid",
+                "text": "Funeral, last-illness, and unsecured debts are not all paid"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [
+              "estate.assets[1].treatment",
+              "estate.assets[1].is_primary_residence",
+              "claimant_is_successor",
+              "authority",
+              "estate.assets[0].gross_value_cents",
+              "estate.inventory_complete"
+            ],
+            "reasons": [],
+            "route": "primary_residence_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.assets[1].treatment",
+              "estate.assets[1].is_primary_residence",
+              "claimant_is_successor",
+              "authority",
+              "estate.assets[0].gross_value_cents",
+              "estate.inventory_complete",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "unknown_safety",
+      "case_index": 20,
+      "detail": "personal_property_affidavit: does_not_qualify became qualifies after nulling estate.inventory_complete",
+      "case": {
+        "death_date": null,
+        "days_since_death": null,
+        "six_months_elapsed": true,
+        "claimant_is_successor": false,
+        "no_superior_right": null,
+        "funeral_last_illness_and_unsecured_debts_paid": null,
+        "authority": "written_personal_representative_consent",
+        "survivor_status": "registered_domestic_partner",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "personal",
+              "gross_value_cents": null,
+              "encumbrances_cents": 26142748,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "mutated_case": {
+        "death_date": null,
+        "days_since_death": null,
+        "six_months_elapsed": true,
+        "claimant_is_successor": false,
+        "no_superior_right": null,
+        "funeral_last_illness_and_unsecured_debts_paid": null,
+        "authority": "written_personal_representative_consent",
+        "survivor_status": "registered_domestic_partner",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "personal",
+              "gross_value_cents": null,
+              "encumbrances_cents": 26142748,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              }
+            ],
+            "route": "personal_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "death_date",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].treatment",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      },
+      "mutated_result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "death_date",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].treatment",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 24,
+      "detail": "fallback row is needs_information, expected does_not_qualify",
+      "case": {
+        "death_date": null,
+        "days_since_death": 821,
+        "six_months_elapsed": null,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": "blocked_by_proceeding",
+        "survivor_status": null,
+        "property_passes_to_survivor": true,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": "direct_beneficiary",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "blocked_by_pending_proceeding",
+                "text": "A pending probate proceeding blocks summary transfer"
+              },
+              {
+                "id": "debts_not_paid",
+                "text": "Funeral, last-illness, and unsecured debts are not all paid"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "blocked_by_pending_proceeding",
+                "text": "A pending probate proceeding blocks summary transfer"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "death_date",
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date",
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 24,
+      "detail": "overall is 'unresolved', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": null,
+        "days_since_death": 821,
+        "six_months_elapsed": null,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": "blocked_by_proceeding",
+        "survivor_status": null,
+        "property_passes_to_survivor": true,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": "direct_beneficiary",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "blocked_by_pending_proceeding",
+                "text": "A pending probate proceeding blocks summary transfer"
+              },
+              {
+                "id": "debts_not_paid",
+                "text": "Funeral, last-illness, and unsecured debts are not all paid"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "blocked_by_pending_proceeding",
+                "text": "A pending probate proceeding blocks summary transfer"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "death_date",
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date",
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 25,
+      "detail": "fallback row is needs_information, expected does_not_qualify",
+      "case": {
+        "death_date": {
+          "year": 2001,
+          "month": 6,
+          "day": 8
+        },
+        "days_since_death": 436,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": null,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": null,
+        "property_passes_to_survivor": true,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": 5542400,
+              "encumbrances_cents": 0,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-1",
+              "kind": "personal",
+              "gross_value_cents": 22247756,
+              "encumbrances_cents": 7566556,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-2",
+              "kind": "personal",
+              "gross_value_cents": 84963188,
+              "encumbrances_cents": 6116308,
+              "treatment": "joint_tenancy",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "estate.assets[0].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [
+              "estate.assets[0].treatment",
+              "no_superior_right",
+              "estate.inventory_complete"
+            ],
+            "reasons": [],
+            "route": "small_value_real_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.assets[0].treatment",
+              "no_superior_right",
+              "estate.inventory_complete",
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 25,
+      "detail": "overall is 'unresolved', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": {
+          "year": 2001,
+          "month": 6,
+          "day": 8
+        },
+        "days_since_death": 436,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": null,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": null,
+        "property_passes_to_survivor": true,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": 5542400,
+              "encumbrances_cents": 0,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-1",
+              "kind": "personal",
+              "gross_value_cents": 22247756,
+              "encumbrances_cents": 7566556,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-2",
+              "kind": "personal",
+              "gross_value_cents": 84963188,
+              "encumbrances_cents": 6116308,
+              "treatment": "joint_tenancy",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "estate.assets[0].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [
+              "estate.assets[0].treatment",
+              "no_superior_right",
+              "estate.inventory_complete"
+            ],
+            "reasons": [],
+            "route": "small_value_real_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.assets[0].treatment",
+              "no_superior_right",
+              "estate.inventory_complete",
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 26,
+      "detail": "fallback row is needs_information, expected does_not_qualify",
+      "case": {
+        "death_date": null,
+        "days_since_death": 172,
+        "six_months_elapsed": null,
+        "claimant_is_successor": null,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": null,
+        "authority": null,
+        "survivor_status": null,
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": 17707179,
+              "treatment": "spouse_passage",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": true
+            },
+            {
+              "name": "asset-1",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": 21973244,
+              "treatment": "terminable_at_death",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "death_date",
+              "survivor_status",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].kind",
+              "claimant_is_successor",
+              "authority",
+              "survivor_status",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 26,
+      "detail": "overall is 'unresolved', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": null,
+        "days_since_death": 172,
+        "six_months_elapsed": null,
+        "claimant_is_successor": null,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": null,
+        "authority": null,
+        "survivor_status": null,
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": 17707179,
+              "treatment": "spouse_passage",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": true
+            },
+            {
+              "name": "asset-1",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": 21973244,
+              "treatment": "terminable_at_death",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "death_date",
+              "survivor_status",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].kind",
+              "claimant_is_successor",
+              "authority",
+              "survivor_status",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "unknown_safety",
+      "case_index": 34,
+      "detail": "personal_property_affidavit: needs_information became qualifies after nulling estate.inventory_complete",
+      "case": {
+        "death_date": null,
+        "days_since_death": null,
+        "six_months_elapsed": null,
+        "claimant_is_successor": true,
+        "no_superior_right": null,
+        "funeral_last_illness_and_unsecured_debts_paid": null,
+        "authority": null,
+        "survivor_status": "registered_domestic_partner",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "mutated_case": {
+        "death_date": null,
+        "days_since_death": null,
+        "six_months_elapsed": null,
+        "claimant_is_successor": true,
+        "no_superior_right": null,
+        "funeral_last_illness_and_unsecured_debts_paid": null,
+        "authority": null,
+        "survivor_status": "registered_domestic_partner",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].kind",
+              "no_superior_right",
+              "days_since_death",
+              "authority"
+            ],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].kind",
+              "estate.assets[0].treatment",
+              "no_superior_right",
+              "six_months_elapsed",
+              "authority",
+              "funeral_last_illness_and_unsecured_debts_paid"
+            ],
+            "reasons": [],
+            "route": "small_value_real_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].kind",
+              "estate.assets[0].treatment",
+              "estate.assets[0].is_primary_residence",
+              "days_since_death",
+              "authority"
+            ],
+            "reasons": [],
+            "route": "primary_residence_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "death_date",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].treatment",
+              "estate.assets[0].kind",
+              "no_superior_right",
+              "days_since_death",
+              "authority",
+              "six_months_elapsed",
+              "funeral_last_illness_and_unsecured_debts_paid",
+              "estate.assets[0].is_primary_residence",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      },
+      "mutated_result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].kind",
+              "estate.assets[0].treatment",
+              "no_superior_right",
+              "six_months_elapsed",
+              "authority",
+              "funeral_last_illness_and_unsecured_debts_paid"
+            ],
+            "reasons": [],
+            "route": "small_value_real_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].kind",
+              "estate.assets[0].treatment",
+              "estate.assets[0].is_primary_residence",
+              "days_since_death",
+              "authority"
+            ],
+            "reasons": [],
+            "route": "primary_residence_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "death_date",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "death_date",
+              "estate.assets[0].treatment",
+              "estate.assets[0].kind",
+              "no_superior_right",
+              "days_since_death",
+              "authority",
+              "six_months_elapsed",
+              "funeral_last_illness_and_unsecured_debts_paid",
+              "estate.assets[0].is_primary_residence",
+              "property_passes_to_survivor",
+              "property_belongs_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 38,
+      "detail": "fallback row is qualifies, expected does_not_qualify",
+      "case": {
+        "death_date": {
+          "year": 2019,
+          "month": 9,
+          "day": 22
+        },
+        "days_since_death": 797,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "written_personal_representative_consent",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": 16625001,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": true
+            },
+            {
+              "name": "asset-1",
+              "kind": "personal",
+              "gross_value_cents": 64883214,
+              "encumbrances_cents": 1679866,
+              "treatment": "transfer_on_death",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "formal_probate_or_other_procedure",
+        "reasoning": "Every simplified route is conclusively disqualified; formal probate or another procedure is required.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "value_over_limit",
+                "text": "Known counted California real-property value $166,250.01 exceeds the $55,425.00 limit"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "value_over_limit",
+                "text": "Known primary-residence value $166,250.01 exceeds the $166,250.00 limit"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_surviving_spouse_or_partner",
+                "text": "There is no surviving spouse or registered domestic partner"
+              }
+            ],
+            "route": "spousal_property_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "No simplified route qualifies; formal probate or another procedure is required",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "qualifies"
+          }
+        ],
+        "verdict": "OTHER_FORM_REQUIRED"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 38,
+      "detail": "overall is 'formal_probate_or_other_procedure', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": {
+          "year": 2019,
+          "month": 9,
+          "day": 22
+        },
+        "days_since_death": 797,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "written_personal_representative_consent",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": 16625001,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": true
+            },
+            {
+              "name": "asset-1",
+              "kind": "personal",
+              "gross_value_cents": 64883214,
+              "encumbrances_cents": 1679866,
+              "treatment": "transfer_on_death",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "formal_probate_or_other_procedure",
+        "reasoning": "Every simplified route is conclusively disqualified; formal probate or another procedure is required.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "value_over_limit",
+                "text": "Known counted California real-property value $166,250.01 exceeds the $55,425.00 limit"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "value_over_limit",
+                "text": "Known primary-residence value $166,250.01 exceeds the $166,250.00 limit"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_surviving_spouse_or_partner",
+                "text": "There is no surviving spouse or registered domestic partner"
+              }
+            ],
+            "route": "spousal_property_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "No simplified route qualifies; formal probate or another procedure is required",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "qualifies"
+          }
+        ],
+        "verdict": "OTHER_FORM_REQUIRED"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 39,
+      "detail": "fallback row is needs_information, expected does_not_qualify",
+      "case": {
+        "death_date": {
+          "year": 2006,
+          "month": 11,
+          "day": 20
+        },
+        "days_since_death": 115,
+        "six_months_elapsed": true,
+        "claimant_is_successor": null,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": null,
+        "authority": null,
+        "survivor_status": null,
+        "property_passes_to_survivor": true,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            },
+            {
+              "name": "asset-1",
+              "kind": "california_real",
+              "gross_value_cents": 82376308,
+              "encumbrances_cents": null,
+              "treatment": "multiple_party_survivor",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-2",
+              "kind": "california_real",
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-3",
+              "kind": "outside_california_real",
+              "gross_value_cents": 1894212,
+              "encumbrances_cents": 9371232,
+              "treatment": "revocable_trust",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": true
+            }
+          ]
+        },
+        "target_index": 2
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "estate.assets[2].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [
+              "estate.assets[2].treatment",
+              "claimant_is_successor",
+              "authority",
+              "funeral_last_illness_and_unsecured_debts_paid",
+              "estate.assets[0].kind",
+              "estate.assets[0].treatment",
+              "estate.inventory_complete"
+            ],
+            "reasons": [],
+            "route": "small_value_real_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.assets[2].treatment",
+              "claimant_is_successor",
+              "authority",
+              "funeral_last_illness_and_unsecured_debts_paid",
+              "estate.assets[0].kind",
+              "estate.assets[0].treatment",
+              "estate.inventory_complete",
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 39,
+      "detail": "overall is 'unresolved', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": {
+          "year": 2006,
+          "month": 11,
+          "day": 20
+        },
+        "days_since_death": 115,
+        "six_months_elapsed": true,
+        "claimant_is_successor": null,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": null,
+        "authority": null,
+        "survivor_status": null,
+        "property_passes_to_survivor": true,
+        "property_belongs_to_survivor": null,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            },
+            {
+              "name": "asset-1",
+              "kind": "california_real",
+              "gross_value_cents": 82376308,
+              "encumbrances_cents": null,
+              "treatment": "multiple_party_survivor",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-2",
+              "kind": "california_real",
+              "gross_value_cents": null,
+              "encumbrances_cents": null,
+              "treatment": null,
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-3",
+              "kind": "outside_california_real",
+              "gross_value_cents": 1894212,
+              "encumbrances_cents": 9371232,
+              "treatment": "revocable_trust",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": true
+            }
+          ]
+        },
+        "target_index": 2
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [
+              "estate.assets[2].treatment"
+            ],
+            "reasons": [],
+            "route": "direct_transfer",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [
+              "estate.assets[2].treatment",
+              "claimant_is_successor",
+              "authority",
+              "funeral_last_illness_and_unsecured_debts_paid",
+              "estate.assets[0].kind",
+              "estate.assets[0].treatment",
+              "estate.inventory_complete"
+            ],
+            "reasons": [],
+            "route": "small_value_real_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.assets[2].treatment",
+              "claimant_is_successor",
+              "authority",
+              "funeral_last_illness_and_unsecured_debts_paid",
+              "estate.assets[0].kind",
+              "estate.assets[0].treatment",
+              "estate.inventory_complete",
+              "survivor_status"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "unknown_safety",
+      "case_index": 41,
+      "detail": "personal_property_affidavit: does_not_qualify became qualifies after nulling estate.inventory_complete",
+      "case": {
+        "death_date": {
+          "year": 2018,
+          "month": 11,
+          "day": 12
+        },
+        "days_since_death": 519,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "written_personal_representative_consent",
+        "survivor_status": "spouse",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": 1814448,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-1",
+              "kind": "california_real",
+              "gross_value_cents": 2714616,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-2",
+              "kind": "outside_california_real",
+              "gross_value_cents": 40095977,
+              "encumbrances_cents": 4172485,
+              "treatment": "military_compensation",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-3",
+              "kind": "personal",
+              "gross_value_cents": 1504237,
+              "encumbrances_cents": 2474492,
+              "treatment": "government_benefit",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "mutated_case": {
+        "death_date": {
+          "year": 2018,
+          "month": 11,
+          "day": 12
+        },
+        "days_since_death": 519,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "written_personal_representative_consent",
+        "survivor_status": "spouse",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": 1814448,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-1",
+              "kind": "california_real",
+              "gross_value_cents": 2714616,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-2",
+              "kind": "outside_california_real",
+              "gross_value_cents": 40095977,
+              "encumbrances_cents": 4172485,
+              "treatment": "military_compensation",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "asset-3",
+              "kind": "personal",
+              "gross_value_cents": 1504237,
+              "encumbrances_cents": 2474492,
+              "treatment": "government_benefit",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "simplified_routes_available",
+        "reasoning": "At least one simplified route qualifies on the supplied facts: small_value_real_property_affidavit.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_personal_property",
+                "text": "The target asset is not personal property"
+              }
+            ],
+            "route": "personal_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "Qualifying counted California real-property value $45,290.64 \u2264 $55,425.00 limit",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "small_value_real_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "property_not_community_or_survivor",
+                "text": "The property neither passes to nor belongs to the surviving spouse or partner"
+              }
+            ],
+            "route": "spousal_property_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "simplified_route_available",
+                "text": "At least one simplified route qualifies"
+              }
+            ],
+            "route": "formal_probate_or_other_procedure",
+            "status": "does_not_qualify"
+          }
+        ],
+        "verdict": "ELIGIBLE"
+      },
+      "mutated_result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [
+              "estate.inventory_complete"
+            ],
+            "reasons": [],
+            "route": "small_value_real_property_affidavit",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "property_not_community_or_survivor",
+                "text": "The property neither passes to nor belongs to the surviving spouse or partner"
+              }
+            ],
+            "route": "spousal_property_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.inventory_complete"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 45,
+      "detail": "fallback row is needs_information, expected does_not_qualify",
+      "case": {
+        "death_date": {
+          "year": 1998,
+          "month": 2,
+          "day": 2
+        },
+        "days_since_death": 618,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "spouse",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "personal",
+              "gross_value_cents": 41214182,
+              "encumbrances_cents": 1908294,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "property_passes_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.inventory_complete",
+              "property_passes_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 45,
+      "detail": "overall is 'unresolved', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": {
+          "year": 1998,
+          "month": 2,
+          "day": 2
+        },
+        "days_since_death": 618,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "spouse",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "personal",
+              "gross_value_cents": 41214182,
+              "encumbrances_cents": 1908294,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "unresolved",
+        "reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_california_real_property",
+                "text": "The target asset is not California real property"
+              },
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "target_not_primary_residence",
+                "text": "The target asset is not the decedent's primary residence"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [
+              "property_passes_to_survivor"
+            ],
+            "reasons": [],
+            "route": "spousal_property_petition",
+            "status": "needs_information"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [
+              "estate.inventory_complete",
+              "property_passes_to_survivor"
+            ],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "needs_information"
+          }
+        ],
+        "verdict": "INCOMPLETE_INFO"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 47,
+      "detail": "fallback row is qualifies, expected does_not_qualify",
+      "case": {
+        "death_date": null,
+        "days_since_death": 876,
+        "six_months_elapsed": false,
+        "claimant_is_successor": false,
+        "no_superior_right": false,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": "blocked_by_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": null,
+              "encumbrances_cents": 21988246,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            },
+            {
+              "name": "asset-1",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": 28768578,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": true,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "formal_probate_or_other_procedure",
+        "reasoning": "Every simplified route is conclusively disqualified; formal probate or another procedure is required.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              },
+              {
+                "id": "superior_right_exists",
+                "text": "Someone else has a superior right to the property"
+              },
+              {
+                "id": "six_month_period_not_met",
+                "text": "Six months have not elapsed since death"
+              },
+              {
+                "id": "blocked_by_pending_proceeding",
+                "text": "A pending probate proceeding blocks summary transfer"
+              },
+              {
+                "id": "debts_not_paid",
+                "text": "Funeral, last-illness, and unsecured debts are not all paid"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              },
+              {
+                "id": "blocked_by_pending_proceeding",
+                "text": "A pending probate proceeding blocks summary transfer"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_surviving_spouse_or_partner",
+                "text": "There is no surviving spouse or registered domestic partner"
+              }
+            ],
+            "route": "spousal_property_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "No simplified route qualifies; formal probate or another procedure is required",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "qualifies"
+          }
+        ],
+        "verdict": "OTHER_FORM_REQUIRED"
+      }
+    },
+    {
+      "invariant": "aggregation",
+      "case_index": 47,
+      "detail": "overall is 'formal_probate_or_other_procedure', expected 'simplified_routes_available'",
+      "case": {
+        "death_date": null,
+        "days_since_death": 876,
+        "six_months_elapsed": false,
+        "claimant_is_successor": false,
+        "no_superior_right": false,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": "blocked_by_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": null,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "asset-0",
+              "kind": "california_real",
+              "gross_value_cents": null,
+              "encumbrances_cents": 21988246,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": null,
+              "is_primary_residence": null
+            },
+            {
+              "name": "asset-1",
+              "kind": null,
+              "gross_value_cents": null,
+              "encumbrances_cents": 28768578,
+              "treatment": "registered_vehicle",
+              "included_in_primary_residence_petition": true,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      },
+      "result": {
+        "engine": "lean4",
+        "error": null,
+        "latency_ms": 0,
+        "overall": "formal_probate_or_other_procedure",
+        "reasoning": "Every simplified route is conclusively disqualified; formal probate or another procedure is required.",
+        "routes": [
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_direct_transfer_basis",
+                "text": "The target asset's valuation treatment provides no direct transfer basis"
+              }
+            ],
+            "route": "direct_transfer",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "personal_property_affidavit",
+            "status": "qualifies"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-305"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              },
+              {
+                "id": "superior_right_exists",
+                "text": "Someone else has a superior right to the property"
+              },
+              {
+                "id": "six_month_period_not_met",
+                "text": "Six months have not elapsed since death"
+              },
+              {
+                "id": "blocked_by_pending_proceeding",
+                "text": "A pending probate proceeding blocks summary transfer"
+              },
+              {
+                "id": "debts_not_paid",
+                "text": "Funeral, last-illness, and unsecured debts are not all paid"
+              }
+            ],
+            "route": "small_value_real_property_affidavit",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-310",
+              "DE-315"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "target_not_counted",
+                "text": "The target asset's valuation treatment is not counted"
+              },
+              {
+                "id": "claimant_not_successor",
+                "text": "The claimant is not the decedent's successor in interest"
+              },
+              {
+                "id": "blocked_by_pending_proceeding",
+                "text": "A pending probate proceeding blocks summary transfer"
+              }
+            ],
+            "route": "primary_residence_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "",
+            "forms": [
+              "DE-221",
+              "DE-226"
+            ],
+            "missing_facts": [],
+            "reasons": [
+              {
+                "id": "no_surviving_spouse_or_partner",
+                "text": "There is no surviving spouse or registered domestic partner"
+              }
+            ],
+            "route": "spousal_property_petition",
+            "status": "does_not_qualify"
+          },
+          {
+            "detail": "No simplified route qualifies; formal probate or another procedure is required",
+            "forms": [
+              "DE-111"
+            ],
+            "missing_facts": [],
+            "reasons": [],
+            "route": "formal_probate_or_other_procedure",
+            "status": "qualifies"
+          }
+        ],
+        "verdict": "OTHER_FORM_REQUIRED"
+      }
+    }
+  ]
+}

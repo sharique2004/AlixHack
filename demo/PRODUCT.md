@@ -70,11 +70,54 @@ keep copy tight; depiction over words.
 
 ## Evidence on Hand
 
-Real, non-fabricated numbers only (do not invent others): ground-truth audit of 12 cases —
-Lean 12/12 correct, Gemini 23/36 runs correct with systematic partial-information failures
-(AUDIT.md); 435,456 fuzzed cases with zero Lean/baseline disagreement; live metrics per run
-(e.g. 15,960 ms / 4,196+3,578 tokens / ≈$0.01 vs 169 ms / 43 ms CPU / ≈$0.0000005); Lean
-source at AlixHack/SimpleProbate/*.lean; court page content in content/simple-transfer.md.
+Real, non-fabricated numbers only (do not invent others). Every figure below is reproducible
+from this repo — if you cannot reproduce it, delete it rather than repeat it:
+
+* Ground-truth audit of 12 cases — Lean 12/12 correct, Gemini 23/36 runs correct, with
+  systematic (not sampling-noise) partial-information failures. Source: `AUDIT.md`.
+  The Lean half replays on demand (`python3 tools/run_audit.py`); the Gemini half is a
+  **record of the 2026-07-28 run**, not a reproducible result — always date it.
+* 12/12 sample cases replay to their documented verdict through the compiled binary
+  (`.lake/build/bin/probate-api`), exit 0, no crash. Re-run: see `STATUS.md`.
+* 79 machine-checked `example` lemmas discharged at compile time (64 in
+  `SimpleProbate/Examples.lean`, 15 in `SimpleProbate/Partial.lean`); no `sorry`, no `axiom`,
+  no `unsafe`. They hold iff `lake build` is green.
+* Live metrics per run, measured not asserted. Observed over all 12 sample cases through
+  `POST /api/analyze/lean`: median 18 ms wall, 16.8 ms CPU, ≈$0.00000019 per case (first
+  call of a session is a ~145 ms / 40 ms cold start). The LLM side is measured live per run
+  from the API response and varies a lot, so quote whatever the run in front of you reports
+  rather than a remembered figure.
+* Lean source at `AlixHack/SimpleProbate/*.lean`; court page content in
+  `content/simple-transfer.md`.
+
+### The settlement router (Atlas), observed 2026-08-12
+
+* **366 kernel-checked lemmas** repo-wide (352 `example` + 14 `theorem`), all discharged on
+  every `lake build`: 81 core CA, 118 router, 64 Florida, 103 federal. Count them with the
+  two `grep`s in `STATUS.md` §1.1.
+* **The Florida date-of-death band, end to end through the compiled binary.** Two sample
+  cases identical apart from `decedent.death_date`: 2026-06-30 → `OTHER_FORM_REQUIRED`
+  (summary administration ruled out, $75,000 band), 2026-07-01 → `ELIGIBLE` (summary
+  administration qualifies, $150,000 band, CS/HB 1337). Also pinned as compile-time
+  regressions. This is the demo.
+* **11 sample cases, 0 contract violations** (`python3 tools/contract_check.py`) against
+  CONTRACT-SETTLEMENT.md §§0, 3, 4, 5 — including "every legal conclusion carries a citation"
+  and "needs_information iff missing_facts non-empty".
+* **20 adversarial inputs, 0 crashes**, exit 0 and a parseable envelope every time.
+* The federal layer's partial-information soundness is **proved by exhaustion** over all 108
+  partial fact sets × 24 completions (2,592 pairs), plus a proof by cases that the Social
+  Security lump sum is never payable to the estate.
+
+### What you may NOT claim
+
+* **No fuzzing of the settlement engine.** `tools/fuzz_probate.py` drives the *California*
+  `probate-api` only: 1,000 cases → 7,940 invocations, 8,940 invariant checks, 0 violations,
+  30.4 s, seed 20260812; self-test 13/13; sabotage control catches 22 violations. Quote it as
+  a result about the CA engine, never about Atlas.
+* **Not "proved correct" and not "verified complete."** Soundness is proved for CA and FL
+  ("it never invents an eligibility"); completeness is not, and the California
+  partial-information layer's general correctness is **tested, not proved** — the five open
+  theorems at `SimpleProbate/Partial.lean:24-38`. `STATUS.md` §4 has the exact wording.
 
 ## Product Principles
 

@@ -8,7 +8,10 @@ milliseconds and re-running live as you drag the estate-value slider. A
 head-to-head box compares time, tokens, and estimated cost per case.
 
 Ground-truth audit of the 12 sample cases: Lean 12/12, Gemini 23/36 runs
-([AUDIT.md](AUDIT.md)).
+([AUDIT.md](AUDIT.md)). The Lean half replays on demand with
+`python3 tools/run_audit.py`; the Gemini half is a record of the 2026-07-28
+run, not a reproducible figure — re-sampling a non-deterministic model produces
+new numbers rather than confirming old ones.
 
 ## Run it
 

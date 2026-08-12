@@ -1,0 +1,1454 @@
+{
+  "harness": "tools/run_audit.py",
+  "generated_at_utc": "2026-08-12T21:40:12Z",
+  "ground_truth_source": "demo/AUDIT.md scoreboard (parsed, not copied)",
+  "case_source": "demo/content/sample_cases.json",
+  "engine_path": "binary",
+  "lean": {
+    "cases": 12,
+    "correct": 12,
+    "score": "12/12",
+    "scope": "verdict level; route tables are recorded, not re-derived"
+  },
+  "llm": {
+    "status": "skipped",
+    "reason": "not requested. The Gemini half of AUDIT.md is opt-in because it costs money, calls a third-party API, and is sampled at non-zero temperature. Re-run with --llm 3 and a GEMINI_API_KEY to reproduce it.",
+    "runs": []
+  },
+  "input_discrepancies": [],
+  "cases": [
+    {
+      "number": 1,
+      "case": "eligible-personal-affidavit",
+      "title": "Bank accounts under the limit",
+      "ground_truth": "ELIGIBLE",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "3/3 correct",
+      "lean_actual": "ELIGIBLE",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "simplified_routes_available",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [],
+          "detail": "Qualifying personal-property value $80,000.00 \u2264 $208,850.00 limit"
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "target_not_primary_residence"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "does_not_qualify",
+          "reasons": [
+            "simplified_route_available"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": ""
+        }
+      ],
+      "lean_reasoning": "At least one simplified route qualifies on the supplied facts: personal_property_affidavit.",
+      "measured_latency_ms": 190.6,
+      "stdout_sha256": "52bb8d724af2c6cfbc3a13b3bbf782b22c626b079403c24e4711026e8fe64cbc",
+      "input_case": {
+        "death_date": {
+          "year": 2025,
+          "month": 5,
+          "day": 10
+        },
+        "days_since_death": 444,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Chase checking account",
+              "kind": "personal",
+              "gross_value_cents": 5000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "Schwab brokerage account",
+              "kind": "personal",
+              "gross_value_cents": 3000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 2,
+      "case": "eligible-direct-transfer",
+      "title": "A condo held in joint tenancy",
+      "ground_truth": "ELIGIBLE",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "3/3 correct",
+      "lean_actual": "ELIGIBLE",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "simplified_routes_available",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [],
+          "detail": "Direct transfer basis: joint_tenancy"
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_personal_property",
+            "waiting_period_not_met"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_counted",
+            "six_month_period_not_met",
+            "debts_not_paid"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_counted",
+            "target_not_primary_residence",
+            "waiting_period_not_met"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "does_not_qualify",
+          "reasons": [
+            "simplified_route_available"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": ""
+        }
+      ],
+      "lean_reasoning": "At least one simplified route qualifies on the supplied facts: direct_transfer.",
+      "measured_latency_ms": 20.8,
+      "stdout_sha256": "2095f767dd0fa715dedc89ebf1103aab282c3bfadc107c9829935085558c81e4",
+      "input_case": {
+        "death_date": {
+          "year": 2026,
+          "month": 7,
+          "day": 3
+        },
+        "days_since_death": 25,
+        "six_months_elapsed": false,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Oakland condo held in joint tenancy",
+              "kind": "california_real",
+              "gross_value_cents": 45000000,
+              "encumbrances_cents": 20000000,
+              "treatment": "joint_tenancy",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "Mechanics Bank checking account",
+              "kind": "personal",
+              "gross_value_cents": 1200000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 3,
+      "case": "eligible-multiple-routes",
+      "title": "Surviving spouse, two open routes",
+      "ground_truth": "ELIGIBLE",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "2/3 correct",
+      "lean_actual": "ELIGIBLE",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "simplified_routes_available",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [],
+          "detail": "Qualifying personal-property value $65,000.00 \u2264 $208,850.00 limit"
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "target_not_primary_residence"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": "Property passes to or belongs to the surviving spouse or registered domestic partner"
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "does_not_qualify",
+          "reasons": [
+            "simplified_route_available"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": ""
+        }
+      ],
+      "lean_reasoning": "At least one simplified route qualifies on the supplied facts: personal_property_affidavit, spousal_property_petition.",
+      "measured_latency_ms": 20.6,
+      "stdout_sha256": "b2b972ce895e26cb8e1fbe5d030b2014c4ba39dc0681203449bdc4d53a652caf",
+      "input_case": {
+        "death_date": {
+          "year": 2025,
+          "month": 8,
+          "day": 20
+        },
+        "days_since_death": 342,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "spouse",
+        "property_passes_to_survivor": true,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Golden 1 savings account",
+              "kind": "personal",
+              "gross_value_cents": 6500000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "Community brokerage account passing to spouse",
+              "kind": "personal",
+              "gross_value_cents": 40000000,
+              "encumbrances_cents": 0,
+              "treatment": "spouse_passage",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 4,
+      "case": "needs-info-unknown-value",
+      "title": "An asset with no appraisal yet",
+      "ground_truth": "INCOMPLETE_INFO",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "3/3 correct",
+      "lean_actual": "INCOMPLETE_INFO",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "unresolved",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "needs_information",
+          "reasons": [],
+          "missing_facts": [
+            "estate.assets[0].gross_value_cents"
+          ],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "target_not_primary_residence"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "needs_information",
+          "reasons": [],
+          "missing_facts": [
+            "estate.assets[0].gross_value_cents"
+          ],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": ""
+        }
+      ],
+      "lean_reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+      "measured_latency_ms": 20.8,
+      "stdout_sha256": "7a70d95451d0e3aa1c83db224405a9d339635102ee8166308e79ddde00536e52",
+      "input_case": {
+        "death_date": {
+          "year": 2025,
+          "month": 5,
+          "day": 10
+        },
+        "days_since_death": 444,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Credit union share account with unknown balance",
+              "kind": "personal",
+              "gross_value_cents": null,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "Vanguard brokerage account",
+              "kind": "personal",
+              "gross_value_cents": 3000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 1
+      }
+    },
+    {
+      "number": 5,
+      "case": "needs-info-unknown-death-date",
+      "title": "Death date not yet known",
+      "ground_truth": "INCOMPLETE_INFO",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "0/3 correct",
+      "lean_actual": "INCOMPLETE_INFO",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "unresolved",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "needs_information",
+          "reasons": [],
+          "missing_facts": [
+            "death_date"
+          ],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "target_not_primary_residence"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "needs_information",
+          "reasons": [],
+          "missing_facts": [
+            "death_date"
+          ],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": ""
+        }
+      ],
+      "lean_reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+      "measured_latency_ms": 21.1,
+      "stdout_sha256": "3e1abf83b0dab52c0ec79a99bcce9902227bfe4ec8251d671cf8c80326cb7e5f",
+      "input_case": {
+        "death_date": null,
+        "days_since_death": 200,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Bank of America checking account",
+              "kind": "personal",
+              "gross_value_cents": 4200000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 6,
+      "case": "needs-info-inventory-not-confirmed",
+      "title": "Inventory not confirmed complete",
+      "ground_truth": "INCOMPLETE_INFO",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "0/3 correct",
+      "lean_actual": "INCOMPLETE_INFO",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "unresolved",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "needs_information",
+          "reasons": [],
+          "missing_facts": [
+            "estate.inventory_complete"
+          ],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "target_not_primary_residence"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "needs_information",
+          "reasons": [],
+          "missing_facts": [
+            "estate.inventory_complete"
+          ],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": ""
+        }
+      ],
+      "lean_reasoning": "No route qualifies on the known facts and at least one route still needs information.",
+      "measured_latency_ms": 20.3,
+      "stdout_sha256": "2881615c4f363a10a069935d7190c2e13d765aa9208b8e2125fa9f5843675fcf",
+      "input_case": {
+        "death_date": {
+          "year": 2025,
+          "month": 5,
+          "day": 10
+        },
+        "days_since_death": 444,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": null,
+          "assets": [
+            {
+              "name": "Patelco savings account",
+              "kind": "personal",
+              "gross_value_cents": 9000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "Household furniture and effects",
+              "kind": "personal",
+              "gross_value_cents": 800000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 7,
+      "case": "over-cap-despite-unknowns",
+      "title": "Clearly over the $208,850 limit",
+      "ground_truth": "OTHER_FORM_REQUIRED",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "1/3 correct",
+      "lean_actual": "OTHER_FORM_REQUIRED",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "formal_probate_or_other_procedure",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "value_over_limit"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "target_not_primary_residence"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": "No simplified route qualifies; formal probate or another procedure is required"
+        }
+      ],
+      "lean_reasoning": "Every simplified route is conclusively disqualified; formal probate or another procedure is required.",
+      "measured_latency_ms": 20.6,
+      "stdout_sha256": "380914fdf69b451c36599a9bd33989a04d8cf9ef9cec3d34905da35fded2ad8f",
+      "input_case": {
+        "death_date": {
+          "year": 2025,
+          "month": 6,
+          "day": 1
+        },
+        "days_since_death": 422,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Citibank savings account",
+              "kind": "personal",
+              "gross_value_cents": 15000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "Vanguard index fund",
+              "kind": "personal",
+              "gross_value_cents": 9000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "Storage unit contents not yet appraised",
+              "kind": "personal",
+              "gross_value_cents": null,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 8,
+      "case": "too-soon-20-days",
+      "title": "Only 20 days since the death",
+      "ground_truth": "OTHER_FORM_REQUIRED",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "3/3 correct",
+      "lean_actual": "OTHER_FORM_REQUIRED",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "formal_probate_or_other_procedure",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "waiting_period_not_met"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "six_month_period_not_met",
+            "debts_not_paid"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "target_not_primary_residence",
+            "waiting_period_not_met"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": "No simplified route qualifies; formal probate or another procedure is required"
+        }
+      ],
+      "lean_reasoning": "Every simplified route is conclusively disqualified; formal probate or another procedure is required.",
+      "measured_latency_ms": 21.8,
+      "stdout_sha256": "fb01d57e2d0a0c62c5f9a131aa3b5eadef71280a79c35fbe6a18c75362a27d3c",
+      "input_case": {
+        "death_date": {
+          "year": 2026,
+          "month": 7,
+          "day": 8
+        },
+        "days_since_death": 20,
+        "six_months_elapsed": false,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": false,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Chase checking account",
+              "kind": "personal",
+              "gross_value_cents": 1000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 9,
+      "case": "eligible-primary-residence",
+      "title": "The $600,000 family home",
+      "ground_truth": "ELIGIBLE",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "3/3 correct",
+      "lean_actual": "ELIGIBLE",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "simplified_routes_available",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_personal_property"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "value_over_limit"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": "Qualifying primary-residence value $600,000.00 \u2264 $750,000.00 limit"
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "does_not_qualify",
+          "reasons": [
+            "simplified_route_available"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": ""
+        }
+      ],
+      "lean_reasoning": "At least one simplified route qualifies on the supplied facts: primary_residence_petition.",
+      "measured_latency_ms": 22.8,
+      "stdout_sha256": "926455a131328527923238841095d4e136776580d8f0089c0379cd206f3eb85d",
+      "input_case": {
+        "death_date": {
+          "year": 2025,
+          "month": 6,
+          "day": 15
+        },
+        "days_since_death": 408,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Sacramento primary residence",
+              "kind": "california_real",
+              "gross_value_cents": 60000000,
+              "encumbrances_cents": 25000000,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": true,
+              "is_primary_residence": true
+            },
+            {
+              "name": "Golden 1 checking account",
+              "kind": "personal",
+              "gross_value_cents": 2000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 10,
+      "case": "eligible-small-value-real-property",
+      "title": "A small $55,000 desert lot",
+      "ground_truth": "ELIGIBLE",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "2/3 correct",
+      "lean_actual": "ELIGIBLE",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "simplified_routes_available",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_personal_property"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": "Qualifying counted California real-property value $55,000.00 \u2264 $69,625.00 limit"
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_primary_residence"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "does_not_qualify",
+          "reasons": [
+            "simplified_route_available"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": ""
+        }
+      ],
+      "lean_reasoning": "At least one simplified route qualifies on the supplied facts: small_value_real_property_affidavit.",
+      "measured_latency_ms": 21.1,
+      "stdout_sha256": "af423f088b23021af652ef8f106242ea46008969bd58e6d1d54cdfd21c44de1d",
+      "input_case": {
+        "death_date": {
+          "year": 2025,
+          "month": 9,
+          "day": 1
+        },
+        "days_since_death": 330,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Vacant desert lot near Barstow",
+              "kind": "california_real",
+              "gross_value_cents": 5500000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            },
+            {
+              "name": "US Bank savings account",
+              "kind": "personal",
+              "gross_value_cents": 4000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 11,
+      "case": "pre-2022-death-over-old-cap",
+      "title": "A 2021 death under the older limit",
+      "ground_truth": "OTHER_FORM_REQUIRED",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "2/3 correct",
+      "lean_actual": "OTHER_FORM_REQUIRED",
+      "lean_correct": true,
+      "lean_error": null,
+      "lean_overall": "formal_probate_or_other_procedure",
+      "lean_routes": [
+        {
+          "route": "direct_transfer",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_direct_transfer_basis"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "personal_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "value_over_limit"
+          ],
+          "missing_facts": [],
+          "forms": [],
+          "detail": ""
+        },
+        {
+          "route": "small_value_real_property_affidavit",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-305"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "primary_residence_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "target_not_california_real_property",
+            "target_not_primary_residence"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-310",
+            "DE-315"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "spousal_property_petition",
+          "status": "does_not_qualify",
+          "reasons": [
+            "no_surviving_spouse_or_partner",
+            "property_not_community_or_survivor"
+          ],
+          "missing_facts": [],
+          "forms": [
+            "DE-221",
+            "DE-226"
+          ],
+          "detail": ""
+        },
+        {
+          "route": "formal_probate_or_other_procedure",
+          "status": "qualifies",
+          "reasons": [],
+          "missing_facts": [],
+          "forms": [
+            "DE-111"
+          ],
+          "detail": "No simplified route qualifies; formal probate or another procedure is required"
+        }
+      ],
+      "lean_reasoning": "Every simplified route is conclusively disqualified; formal probate or another procedure is required.",
+      "measured_latency_ms": 20.4,
+      "stdout_sha256": "d8924797bbea674d01f678feeeef0185cbc5f31b9e182348f7c737963a5b9a0e",
+      "input_case": {
+        "death_date": {
+          "year": 2021,
+          "month": 10,
+          "day": 1
+        },
+        "days_since_death": 1761,
+        "six_months_elapsed": true,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "First Republic savings account",
+              "kind": "personal",
+              "gross_value_cents": 17500000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    },
+    {
+      "number": 12,
+      "case": "error-after-snapshot",
+      "title": "A death date beyond 2026",
+      "ground_truth": "ERROR",
+      "audit_md_lean_grade": "\u2713 correct",
+      "audit_md_gemini_grade": "1/3 correct",
+      "lean_actual": "ERROR",
+      "lean_correct": true,
+      "lean_error": {
+        "detail": "The death date is after 2026-12-31, the model's supported snapshot end",
+        "type": "after_snapshot"
+      },
+      "lean_overall": null,
+      "lean_routes": [],
+      "lean_reasoning": "The death date is after 2026-12-31, the model's supported snapshot end",
+      "measured_latency_ms": 20.4,
+      "stdout_sha256": "74edec0d2b7664c973600381c18b6e0d97f17aeb0a23908c4955f0bbe42c180f",
+      "input_case": {
+        "death_date": {
+          "year": 2027,
+          "month": 3,
+          "day": 1
+        },
+        "days_since_death": 100,
+        "six_months_elapsed": false,
+        "claimant_is_successor": true,
+        "no_superior_right": true,
+        "funeral_last_illness_and_unsecured_debts_paid": true,
+        "authority": "no_proceeding",
+        "survivor_status": "none",
+        "property_passes_to_survivor": false,
+        "property_belongs_to_survivor": false,
+        "estate": {
+          "inventory_complete": true,
+          "assets": [
+            {
+              "name": "Wells Fargo checking account",
+              "kind": "personal",
+              "gross_value_cents": 3000000,
+              "encumbrances_cents": 0,
+              "treatment": "counted",
+              "included_in_primary_residence_petition": false,
+              "is_primary_residence": false
+            }
+          ]
+        },
+        "target_index": 0
+      }
+    }
+  ]
+}
