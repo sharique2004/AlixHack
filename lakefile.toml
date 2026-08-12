@@ -12,3 +12,7 @@ root = "Main"
 [[lean_exe]]
 name = "probate-api"
 root = "ApiMain"
+
+[[lean_exe]]
+name = "settlement-api"
+root = "SettlementMain"
