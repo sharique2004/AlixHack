@@ -1,0 +1,10 @@
+# The Lean build tree is 318 MB of local arm64 artifacts. Vercel does not compile
+# Lean — deploy/vercel-build.sh downloads the CI-built linux/amd64 engines from
+# the engine-latest release — so none of this belongs in the upload.
+.lake/
+.git/
+demo/frontend/node_modules/
+demo/frontend/dist/
+demo/backend/.venv/
+**/__pycache__/
+*.log

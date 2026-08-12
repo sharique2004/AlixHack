@@ -5,13 +5,19 @@
   "installCommand": "echo skip",
   "functions": {
     "api/index.py": {
-      "memory": 2048,
       "maxDuration": 60,
-      "includeFiles": "{bin/**,demo/backend/app/**,demo/content/**,SimpleProbate/**,ApiMain.lean}"
+      "includeFiles": "{bin/**,demo/backend/app/**,demo/content/**,SimpleProbate/**,ApiMain.lean}",
+      "excludeFiles": "{demo/frontend/**,.lake/**,tools/**,docs/**,deploy/**,demo/backend/.venv/**,**/__pycache__/**,**/node_modules/**}"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/((?!assets/|favicon).*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!assets/|favicon).*)",
+      "destination": "/index.html"
+    }
   ]
 }
