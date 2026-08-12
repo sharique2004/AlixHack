@@ -1,0 +1,1025 @@
+{
+  "_note": "Demo intake fixtures for POST /api/settlement/assess, conforming to CONTRACT-SETTLEMENT.md §2 (IntakeCase). People and account names are invented; every legal threshold, date band and dollar figure is real. Money is integer CENTS. An explicit null means UNKNOWN and is load-bearing — do not 'tidy' nulls into values.",
+  "samples": [
+    {
+      "id": "ca-canonical-married-couple",
+      "label": "California — married, home held jointly",
+      "blurb": "The most common shape: a house owned jointly with a spouse, a retirement account with a named beneficiary, and a brokerage account and a car in one name alone. One savings account has unclear title, and that single unknown is enough to hold the affidavit open rather than answer it wrongly.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 3,
+            "day": 4
+          },
+          "domicile_state": "CA",
+          "marital_status": "married",
+          "surviving_spouse": true,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false,
+          "refund_claimant": "surviving_spouse_joint_return",
+          "final_return_kind": "original",
+          "ssa_insured_at_death": true
+        },
+        "assets": [
+          {
+            "name": "Primary residence — 12 Oak St",
+            "kind": "real_property",
+            "situs_state": "CA",
+            "gross_value_cents": 62000000,
+            "encumbrance_cents": 41000000,
+            "title_form": "jtwros",
+            "beneficiary_designation": "none",
+            "is_primary_residence": true
+          },
+          {
+            "name": "Schwab brokerage account",
+            "kind": "brokerage",
+            "situs_state": "CA",
+            "gross_value_cents": 14100000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          },
+          {
+            "name": "Fidelity 401(k)",
+            "kind": "retirement",
+            "situs_state": "CA",
+            "gross_value_cents": 31000000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "named_living",
+            "is_primary_residence": false
+          },
+          {
+            "name": "2019 Toyota Camry",
+            "kind": "vehicle",
+            "situs_state": "CA",
+            "gross_value_cents": 1800000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          },
+          {
+            "name": "Wells Fargo savings account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 2400000,
+            "encumbrance_cents": 0,
+            "title_form": null,
+            "beneficiary_designation": "unsure",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [
+          {
+            "kind": "mortgage",
+            "amount_cents": 41000000,
+            "secured_by_asset": "Primary residence — 12 Oak St"
+          },
+          {
+            "kind": "funeral",
+            "amount_cents": 940000,
+            "secured_by_asset": null
+          }
+        ],
+        "heirs": [
+          {
+            "relationship": "spouse",
+            "name": "Marisol Reyes",
+            "age": 61,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": true,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          },
+          {
+            "relationship": "child",
+            "name": "Daniel Reyes",
+            "age": 34,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": null,
+        "heirs_complete": true
+      }
+    },
+    {
+      "id": "fl-threshold-death-june-30-2026",
+      "label": "Florida — $120,000 estate, death June 30 2026",
+      "blurb": "A Florida estate of $120,000, with the death on June 30, 2026 — the last day before the state's summary administration limit changed. Read it beside the next sample: same family, same accounts, one day apart.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 6,
+            "day": 30
+          },
+          "domicile_state": "FL",
+          "marital_status": "widowed",
+          "surviving_spouse": false,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false,
+          "will_directs_administration": false,
+          "administration_pending": false,
+          "federal_refund_due": true,
+          "refund_claimant": "other",
+          "final_return_kind": "original",
+          "ssa_insured_at_death": true
+        },
+        "assets": [
+          {
+            "name": "Truist checking account",
+            "kind": "bank",
+            "situs_state": "FL",
+            "gross_value_cents": 4500000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false,
+            "exempt_from_creditors": false
+          },
+          {
+            "name": "Vanguard brokerage account",
+            "kind": "brokerage",
+            "situs_state": "FL",
+            "gross_value_cents": 6000000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false,
+            "exempt_from_creditors": false
+          },
+          {
+            "name": "2021 Honda CR-V",
+            "kind": "vehicle",
+            "situs_state": "FL",
+            "gross_value_cents": 1500000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [
+          {
+            "kind": "credit_card",
+            "amount_cents": 320000,
+            "secured_by_asset": null
+          }
+        ],
+        "heirs": [
+          {
+            "relationship": "child",
+            "name": "Alicia Navarro",
+            "age": 41,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          },
+          {
+            "relationship": "child",
+            "name": "Tomas Navarro",
+            "age": 38,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": true,
+        "heirs_complete": true,
+        "expenses": {
+          "preferred_funeral_cents": 950000,
+          "last_illness_medical_cents": 240000
+        }
+      }
+    },
+    {
+      "id": "fl-threshold-death-july-1-2026",
+      "label": "Florida — the same $120,000 estate, death July 1 2026",
+      "blurb": "The identical estate, with the death one day later. Florida raised its summary administration limit on July 1, 2026. Nothing about the family changed; only the date did.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 7,
+            "day": 1
+          },
+          "domicile_state": "FL",
+          "marital_status": "widowed",
+          "surviving_spouse": false,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false,
+          "will_directs_administration": false,
+          "administration_pending": false,
+          "federal_refund_due": true,
+          "refund_claimant": "other",
+          "final_return_kind": "original",
+          "ssa_insured_at_death": true
+        },
+        "assets": [
+          {
+            "name": "Truist checking account",
+            "kind": "bank",
+            "situs_state": "FL",
+            "gross_value_cents": 4500000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false,
+            "exempt_from_creditors": false
+          },
+          {
+            "name": "Vanguard brokerage account",
+            "kind": "brokerage",
+            "situs_state": "FL",
+            "gross_value_cents": 6000000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false,
+            "exempt_from_creditors": false
+          },
+          {
+            "name": "2021 Honda CR-V",
+            "kind": "vehicle",
+            "situs_state": "FL",
+            "gross_value_cents": 1500000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [
+          {
+            "kind": "credit_card",
+            "amount_cents": 320000,
+            "secured_by_asset": null
+          }
+        ],
+        "heirs": [
+          {
+            "relationship": "child",
+            "name": "Alicia Navarro",
+            "age": 41,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          },
+          {
+            "relationship": "child",
+            "name": "Tomas Navarro",
+            "age": 38,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": true,
+        "heirs_complete": true,
+        "expenses": {
+          "preferred_funeral_cents": 950000,
+          "last_illness_medical_cents": 240000
+        }
+      }
+    },
+    {
+      "id": "ca-beneficiary-predeceased",
+      "label": "California — the beneficiary died first",
+      "blurb": "The family was told the life insurance and the IRA would pass straight to the named beneficiary, so neither would need probate. The named beneficiary died before the decedent and no replacement was ever recorded, which changes where both accounts actually go.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 1,
+            "day": 22
+          },
+          "domicile_state": "CA",
+          "marital_status": "widowed",
+          "surviving_spouse": false,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "none",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false,
+          "ssa_insured_at_death": true,
+          "federal_refund_due": true,
+          "refund_claimant": "other",
+          "final_return_kind": "original"
+        },
+        "assets": [
+          {
+            "name": "Northwestern Mutual life policy",
+            "kind": "life_insurance",
+            "situs_state": "CA",
+            "gross_value_cents": 25000000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "named_predeceased",
+            "is_primary_residence": false
+          },
+          {
+            "name": "Traditional IRA",
+            "kind": "retirement",
+            "situs_state": "CA",
+            "gross_value_cents": 8600000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "named_predeceased",
+            "is_primary_residence": false
+          },
+          {
+            "name": "Bank of America checking account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 1150000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [
+          {
+            "kind": "medical",
+            "amount_cents": 480000,
+            "secured_by_asset": null
+          }
+        ],
+        "heirs": [
+          {
+            "relationship": "child",
+            "name": "Priya Raman",
+            "age": 47,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": true,
+        "heirs_complete": true
+      }
+    },
+    {
+      "id": "ca-unknown-title-residence",
+      "label": "California — nobody is sure whether the house was retitled",
+      "blurb": "A living trust was signed years ago, but the family cannot tell whether the house was ever actually transferred into it. Everything else about this estate is known. Until the deed is checked, the honest answer is that more information is needed — not a verdict either way.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 2,
+            "day": 9
+          },
+          "domicile_state": "CA",
+          "marital_status": "single",
+          "surviving_spouse": false,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false
+        },
+        "assets": [
+          {
+            "name": "Residence — 4180 Alameda Ave",
+            "kind": "real_property",
+            "situs_state": "CA",
+            "gross_value_cents": 78500000,
+            "encumbrance_cents": 0,
+            "title_form": null,
+            "beneficiary_designation": "unsure",
+            "is_primary_residence": true
+          },
+          {
+            "name": "Chase checking account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 2750000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [],
+        "heirs": [
+          {
+            "relationship": "sibling",
+            "name": "Ruth Feldman",
+            "age": 68,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": null
+      }
+    },
+    {
+      "id": "ca-insolvent-estate",
+      "label": "California — the debts exceed the assets",
+      "blurb": "Medical and credit card balances add up to more than everything the estate holds. When that happens the order in which creditors are paid is set by statute, and a family member who pays the wrong bill first can end up personally responsible. This one needs a professional before any money moves.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 4,
+            "day": 17
+          },
+          "domicile_state": "CA",
+          "marital_status": "divorced",
+          "surviving_spouse": false,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "none",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": true,
+          "veteran": false,
+          "pending_litigation": false,
+          "ssa_insured_at_death": true,
+          "federal_refund_due": true,
+          "refund_claimant": "other",
+          "final_return_kind": "original"
+        },
+        "assets": [
+          {
+            "name": "Credit union savings account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 620000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          },
+          {
+            "name": "2014 Subaru Outback",
+            "kind": "vehicle",
+            "situs_state": "CA",
+            "gross_value_cents": 780000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [
+          {
+            "kind": "medical",
+            "amount_cents": 14200000,
+            "secured_by_asset": null
+          },
+          {
+            "kind": "credit_card",
+            "amount_cents": 6800000,
+            "secured_by_asset": null
+          },
+          {
+            "kind": "funeral",
+            "amount_cents": 810000,
+            "secured_by_asset": null
+          }
+        ],
+        "heirs": [
+          {
+            "relationship": "child",
+            "name": "Jordan Ellis",
+            "age": 29,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": true,
+        "heirs_complete": true
+      }
+    },
+    {
+      "id": "ca-death-under-investigation",
+      "label": "California — the death is under investigation",
+      "blurb": "The manner of death is recorded as homicide and the death certificate is not final. Every person who would inherit has to be screened before anything is distributed, and one relative here is named in the investigation. Nothing should be paid out while that is open.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 5,
+            "day": 28
+          },
+          "domicile_state": "CA",
+          "marital_status": "married",
+          "surviving_spouse": true,
+          "manner_of_death": "homicide",
+          "death_certificate_final": false,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": true,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false,
+          "ssa_insured_at_death": true
+        },
+        "assets": [
+          {
+            "name": "Primary residence — 907 Larkspur Ln",
+            "kind": "real_property",
+            "situs_state": "CA",
+            "gross_value_cents": 54000000,
+            "encumbrance_cents": 22000000,
+            "title_form": "community_with_ros",
+            "beneficiary_designation": "none",
+            "is_primary_residence": true
+          },
+          {
+            "name": "Term life policy",
+            "kind": "life_insurance",
+            "situs_state": "CA",
+            "gross_value_cents": 50000000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "named_living",
+            "is_primary_residence": false
+          },
+          {
+            "name": "Joint checking account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 1930000,
+            "encumbrance_cents": 0,
+            "title_form": "jtwros",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [
+          {
+            "kind": "mortgage",
+            "amount_cents": 22000000,
+            "secured_by_asset": "Primary residence — 907 Larkspur Ln"
+          }
+        ],
+        "heirs": [
+          {
+            "relationship": "spouse",
+            "name": "Kevin Doyle",
+            "age": 52,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": true,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": true,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          },
+          {
+            "relationship": "child",
+            "name": "Nora Doyle",
+            "age": 19,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": true,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": true,
+        "inventory_complete": null,
+        "heirs_complete": true
+      }
+    },
+    {
+      "id": "ca-domicile-out-of-state-real-property",
+      "label": "California domicile, a cabin in Arizona",
+      "blurb": "The decedent lived in California, but owned land in Arizona. Real property is handled by the state it sits in, so the Arizona parcel needs its own proceeding there in addition to whatever California requires. Families are often surprised by this one.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 3,
+            "day": 30
+          },
+          "domicile_state": "CA",
+          "marital_status": "widowed",
+          "surviving_spouse": false,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": true,
+          "pending_litigation": false,
+          "ssa_insured_at_death": true,
+          "federal_refund_due": true,
+          "refund_claimant": "other",
+          "final_return_kind": "original"
+        },
+        "assets": [
+          {
+            "name": "Cabin — Coconino County, AZ",
+            "kind": "real_property",
+            "situs_state": "AZ",
+            "gross_value_cents": 21500000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          },
+          {
+            "name": "Primary residence — 55 Bayview Rd",
+            "kind": "real_property",
+            "situs_state": "CA",
+            "gross_value_cents": 69000000,
+            "encumbrance_cents": 0,
+            "title_form": "trust_funded",
+            "beneficiary_designation": "none",
+            "is_primary_residence": true
+          },
+          {
+            "name": "Ally savings account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 4300000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [],
+        "heirs": [
+          {
+            "relationship": "child",
+            "name": "Grace Whitfield",
+            "age": 55,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          },
+          {
+            "relationship": "child",
+            "name": "Owen Whitfield",
+            "age": 51,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": true,
+        "heirs_complete": true
+      }
+    },
+    {
+      "id": "ca-domicile-florida-condo",
+      "label": "California domicile, a condo in Florida",
+      "blurb": "A California decedent who owned a condominium in Sarasota. Real property is administered where it sits, so Florida has to be dealt with on its own terms alongside the California estate.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 1,
+            "day": 18
+          },
+          "domicile_state": "CA",
+          "marital_status": "widowed",
+          "surviving_spouse": false,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false,
+          "will_directs_administration": false,
+          "administration_pending": false,
+          "federal_refund_due": true,
+          "refund_claimant": "other",
+          "final_return_kind": "original",
+          "ssa_insured_at_death": true
+        },
+        "assets": [
+          {
+            "name": "Chase checking account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 2800000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false,
+            "exempt_from_creditors": false
+          },
+          {
+            "name": "Sarasota condo",
+            "kind": "real_property",
+            "situs_state": "FL",
+            "gross_value_cents": 9500000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false,
+            "exempt_from_creditors": false
+          }
+        ],
+        "debts": [],
+        "heirs": [
+          {
+            "relationship": "child",
+            "name": "Devon Reyes",
+            "age": 49,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": true,
+        "heirs_complete": true,
+        "expenses": {
+          "preferred_funeral_cents": 880000,
+          "last_illness_medical_cents": 120000
+        }
+      }
+    },
+    {
+      "id": "ca-small-estate-all-known",
+      "label": "California — a small estate with nothing unknown",
+      "blurb": "Two accounts and a car, all in one name, all values confirmed, and the family has verified the list is complete. More than forty days have passed. This is what a clean answer looks like when every fact needed is actually on hand.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2026,
+            "month": 1,
+            "day": 15
+          },
+          "domicile_state": "CA",
+          "marital_status": "single",
+          "surviving_spouse": false,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false,
+          "ssa_insured_at_death": true,
+          "federal_refund_due": true,
+          "refund_claimant": "other",
+          "final_return_kind": "original"
+        },
+        "assets": [
+          {
+            "name": "Union Bank checking account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 1420000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          },
+          {
+            "name": "Certificate of deposit",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 2380000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          },
+          {
+            "name": "2018 Mazda 3",
+            "kind": "vehicle",
+            "situs_state": "CA",
+            "gross_value_cents": 950000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [
+          {
+            "kind": "funeral",
+            "amount_cents": 620000,
+            "secured_by_asset": null
+          }
+        ],
+        "heirs": [
+          {
+            "relationship": "sibling",
+            "name": "Hana Kobayashi",
+            "age": 62,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false,
+            "lived_in_same_household_at_death": false,
+            "entitled_to_spouse_benefits_month_of_death": false,
+            "entitled_to_child_benefits_month_of_death": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": true,
+        "heirs_complete": true
+      }
+    },
+    {
+      "id": "error-death-after-snapshot",
+      "label": "A death date past the end of the sources",
+      "blurb": "The legal sources behind this model stop at December 31, 2026. A death after that date gets a plain refusal naming the boundary, not a guess. Knowing where the model stops is part of knowing what it is worth.",
+      "case": {
+        "as_of_date": {
+          "year": 2026,
+          "month": 8,
+          "day": 12
+        },
+        "decedent": {
+          "death_date": {
+            "year": 2027,
+            "month": 2,
+            "day": 10
+          },
+          "domicile_state": "CA",
+          "marital_status": "married",
+          "surviving_spouse": true,
+          "manner_of_death": "natural",
+          "death_certificate_final": true,
+          "will_status": "valid_original",
+          "employment_related_death": false,
+          "third_party_fault_suspected": false,
+          "related_death_within_120h": false,
+          "received_medicaid_ltc": false,
+          "veteran": false,
+          "pending_litigation": false
+        },
+        "assets": [
+          {
+            "name": "Primary residence — 88 Juniper Ct",
+            "kind": "real_property",
+            "situs_state": "CA",
+            "gross_value_cents": 48000000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": true
+          },
+          {
+            "name": "Citibank checking account",
+            "kind": "bank",
+            "situs_state": "CA",
+            "gross_value_cents": 3100000,
+            "encumbrance_cents": 0,
+            "title_form": "sole",
+            "beneficiary_designation": "none",
+            "is_primary_residence": false
+          }
+        ],
+        "debts": [],
+        "heirs": [
+          {
+            "relationship": "spouse",
+            "name": "Ana Sørensen",
+            "age": 58,
+            "receives_means_tested_benefits": false,
+            "is_suspect_in_death": false,
+            "disclaimed": false
+          }
+        ],
+        "conflict_signals": false,
+        "inventory_complete": true
+      }
+    }
+  ]
+}

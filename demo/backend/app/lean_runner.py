@@ -32,7 +32,20 @@ from .schemas import CheckResult, Usage
 DEMO_ROOT = Path(__file__).resolve().parent.parent.parent
 # The Lean project is the repository root (demo/ lives inside it).
 ALIXHACK_DIR = DEMO_ROOT.parent
-PROBATE_API_BIN = ALIXHACK_DIR / ".lake" / "build" / "bin" / "probate-api"
+
+def _bin_path(name: str) -> Path:
+    """Where the compiled engine lives.
+
+    Defaults to the in-repo build so local development needs no configuration.
+    A container image has no repo checkout, so LEAN_BIN_DIR overrides it.
+    """
+    override = os.environ.get("LEAN_BIN_DIR", "").strip()
+    if override:
+        return Path(override) / name
+    return ALIXHACK_DIR / ".lake" / "build" / "bin" / name
+
+
+PROBATE_API_BIN = _bin_path("probate-api")
 LAKE_BIN = Path.home() / ".elan" / "bin" / "lake"
 
 SUBPROCESS_TIMEOUT_S = 10.0

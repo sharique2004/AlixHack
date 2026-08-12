@@ -202,3 +202,191 @@ class CheckResult(BaseModel):
     engine: str  # "lean4" | Gemini model name
     latency_ms: int
     usage: Optional[Usage] = None  # null when nothing measurable
+
+
+# --------------------------------------------------------------------------- #
+# Settlement router intake (CONTRACT-SETTLEMENT.md §2)
+# --------------------------------------------------------------------------- #
+#
+# The settlement engine owns every semantic rule; these models are only a
+# loose wire-shape gate on POST /api/settlement/assess. "Loose" is deliberate
+# and has one hard requirement: an explicit `null` and an absent key must both
+# survive as UNKNOWN. That is why the endpoint forwards the RAW request body —
+# `IntakeCase` is validated and then discarded, never re-serialised, so
+# Pydantic's defaults can never turn a null into `false` or `0` on the way to
+# Lean.
+#
+# Unrecognised keys are ignored rather than rejected (pydantic's default), so a
+# client that sends a field the engine understands but this gate has not
+# learned yet still reaches the engine verbatim. Enum values that ARE present
+# are checked, so a typo'd `title_form` is a 422 here rather than a silently
+# unknown fact downstream.
+
+
+class MannerOfDeath(str, Enum):
+    natural = "natural"
+    accident = "accident"
+    suicide = "suicide"
+    homicide = "homicide"
+    pending = "pending"
+    undetermined = "undetermined"
+
+
+class WillStatus(str, Enum):
+    valid_original = "valid_original"
+    copy_only = "copy_only"
+    holographic = "holographic"
+    none = "none"
+    unsure = "unsure"
+
+
+class MaritalStatus(str, Enum):
+    married = "married"
+    single = "single"
+    widowed = "widowed"
+    divorced = "divorced"
+
+
+class IntakeAssetKind(str, Enum):
+    real_property = "real_property"
+    bank = "bank"
+    brokerage = "brokerage"
+    retirement = "retirement"
+    life_insurance = "life_insurance"
+    vehicle = "vehicle"
+    personal = "personal"
+    business = "business"
+    digital = "digital"
+    employment_comp = "employment_comp"
+    other = "other"
+
+
+class TitleForm(str, Enum):
+    sole = "sole"
+    jtwros = "jtwros"
+    tenancy_by_entirety = "tenancy_by_entirety"
+    community_with_ros = "community_with_ros"
+    tenants_in_common = "tenants_in_common"
+    trust_funded = "trust_funded"
+    custodial = "custodial"
+
+
+class BeneficiaryDesignation(str, Enum):
+    named_living = "named_living"
+    named_predeceased = "named_predeceased"
+    estate = "estate"
+    none = "none"
+    unsure = "unsure"
+
+
+class DebtKind(str, Enum):
+    mortgage = "mortgage"
+    credit_card = "credit_card"
+    medical = "medical"
+    tax = "tax"
+    loan = "loan"
+    funeral = "funeral"
+    other = "other"
+
+
+class RefundClaimant(str, Enum):
+    surviving_spouse_joint_return = "surviving_spouse_joint_return"
+    court_appointed_representative = "court_appointed_representative"
+    other = "other"
+
+
+class FinalReturnKind(str, Enum):
+    original = "original"
+    amended = "amended"
+
+
+class HeirRelationship(str, Enum):
+    spouse = "spouse"
+    child = "child"
+    parent = "parent"
+    sibling = "sibling"
+    other = "other"
+
+
+class IntakeDecedent(BaseModel):
+    death_date: Optional[CivilDate] = None
+    domicile_state: Optional[str] = None  # 2-letter; unsupported ⇒ advisory only
+    marital_status: Optional[MaritalStatus] = None
+    surviving_spouse: Optional[bool] = None
+    manner_of_death: Optional[MannerOfDeath] = None
+    death_certificate_final: Optional[bool] = None
+    will_status: Optional[WillStatus] = None
+    employment_related_death: Optional[bool] = None
+    third_party_fault_suspected: Optional[bool] = None
+    related_death_within_120h: Optional[bool] = None
+    received_medicaid_ltc: Optional[bool] = None
+    veteran: Optional[bool] = None
+    pending_litigation: Optional[bool] = None
+    # CONTRACT §2.1 — Florida
+    will_directs_administration: Optional[bool] = None
+    administration_pending: Optional[bool] = None
+    # CONTRACT §2.1 — federal
+    federal_refund_due: Optional[bool] = None
+    refund_claimant: Optional[RefundClaimant] = None
+    final_return_kind: Optional[FinalReturnKind] = None
+    court_certificate_attached: Optional[bool] = None
+    # Fully OR currently insured — 42 U.S.C. §402(i) opens on the disjunction.
+    ssa_insured_at_death: Optional[bool] = None
+
+
+class IntakeAsset(BaseModel):
+    # Required and unique across the case — asset names are identifiers that
+    # `debts[].secured_by_asset` and the response's `asset_map` refer back to.
+    name: str
+    kind: Optional[IntakeAssetKind] = None
+    situs_state: Optional[str] = None
+    gross_value_cents: Optional[int] = None
+    encumbrance_cents: Optional[int] = None
+    title_form: Optional[TitleForm] = None
+    beneficiary_designation: Optional[BeneficiaryDesignation] = None
+    is_primary_residence: Optional[bool] = None
+    # §2.1 — stated exemption under Fla. Stat. §732.402. Protected homestead is
+    # derived by the engine, not stated here.
+    exempt_from_creditors: Optional[bool] = None
+
+
+class IntakeDebt(BaseModel):
+    kind: Optional[DebtKind] = None
+    amount_cents: Optional[int] = None
+    secured_by_asset: Optional[str] = None
+
+
+class IntakeHeir(BaseModel):
+    relationship: Optional[HeirRelationship] = None
+    name: Optional[str] = None
+    age: Optional[int] = None
+    receives_means_tested_benefits: Optional[bool] = None
+    is_suspect_in_death: Optional[bool] = None
+    disclaimed: Optional[bool] = None
+    # §2.1 — 42 U.S.C. §402(i). Entitlement is a fact, never inferred from
+    # `relationship`.
+    lived_in_same_household_at_death: Optional[bool] = None
+    entitled_to_spouse_benefits_month_of_death: Optional[bool] = None
+    entitled_to_child_benefits_month_of_death: Optional[bool] = None
+
+
+class IntakeExpenses(BaseModel):
+    # §2.1 — Fla. Stat. §735.301's allowance is measured against these two.
+    preferred_funeral_cents: Optional[int] = None
+    last_illness_medical_cents: Optional[int] = None
+
+
+class IntakeCase(BaseModel):
+    # The only required field. Everything else is nullable/absent = unknown.
+    as_of_date: CivilDate
+    decedent: Optional[IntakeDecedent] = None
+    assets: Optional[List[IntakeAsset]] = None
+    debts: Optional[List[IntakeDebt]] = None
+    heirs: Optional[List[IntakeHeir]] = None
+    conflict_signals: Optional[bool] = None
+    # "Is this list of assets complete?" — gates every valuation cap test.
+    inventory_complete: Optional[bool] = None
+    # §2.1 — "Is this list of people complete?" — gates every negative
+    # conclusion about who may claim.
+    heirs_complete: Optional[bool] = None
+    expenses: Optional[IntakeExpenses] = None
