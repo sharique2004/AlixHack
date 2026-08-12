@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "bash deploy/vercel-build.sh",
+  "outputDirectory": "demo/frontend/dist",
+  "installCommand": "echo skip",
+  "functions": {
+    "api/index.py": {
+      "memory": 2048,
+      "maxDuration": 60,
+      "includeFiles": "{bin/**,demo/backend/app/**,demo/content/**,SimpleProbate/**,ApiMain.lean}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!assets/|favicon).*)", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,77 @@
+name: Engine binaries (linux/amd64)
+
+# Builds the Lean engines on a native x86_64 runner and publishes them as a
+# rolling prerelease. Vercel's build downloads them from there: its Python
+# functions can run a native binary, but they cannot compile Lean, and
+# cross-compiling from an arm64 laptop under QEMU is impractically slow.
+#
+# `lake build` discharges every `by decide` regression, so a broken legal rule
+# fails this workflow rather than reaching a deployment.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "SimpleProbate/**"
+      - "SimpleProbate.lean"
+      - "*.lean"
+      - "lakefile.toml"
+      - "lean-toolchain"
+      - ".github/workflows/engine-binaries.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o elan-init.sh
+          sh elan-init.sh -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Build (this also checks every proof)
+        run: |
+          lake build
+          lake build probate-api
+          lake build settlement-api
+
+      - name: Verify the engines answer, and that the law is date-banded
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp .lake/build/bin/probate-api .lake/build/bin/settlement-api out/
+
+          # Same estate, one day apart across the CS/HB 1337 edge. If these two
+          # ever agree, the Florida threshold banding has regressed.
+          june=$(jq -c '.samples[] | select(.id=="fl-threshold-death-june-30-2026") | .case' demo/content/settlement_samples.json)
+          july=$(jq -c '.samples[] | select(.id=="fl-threshold-death-july-1-2026")  | .case' demo/content/settlement_samples.json)
+
+          vj=$(printf '%s' "$june" | ./out/settlement-api | jq -r '.jurisdictions[] | select(.code=="FL") | .verdict')
+          vy=$(printf '%s' "$july" | ./out/settlement-api | jq -r '.jurisdictions[] | select(.code=="FL") | .verdict')
+          echo "2026-06-30 -> $vj"
+          echo "2026-07-01 -> $vy"
+          test "$vj" = "OTHER_FORM_REQUIRED"
+          test "$vy" = "ELIGIBLE"
+
+      - name: Strip and report sizes
+        run: |
+          ls -lh out/
+          strip out/probate-api out/settlement-api || echo "strip unavailable — shipping unstripped"
+          ls -lh out/
+          file out/settlement-api
+
+      - name: Publish as a rolling prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete engine-latest --yes --cleanup-tag || true
+          gh release create engine-latest out/probate-api out/settlement-api \
+            --prerelease \
+            --title "Engine binaries (linux/amd64) — ${GITHUB_SHA:0:7}" \
+            --notes "Built from ${GITHUB_SHA} on $(date -u +%Y-%m-%dT%H:%M:%SZ). Consumed by the Vercel build; not intended for direct download."
