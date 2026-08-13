@@ -678,12 +678,20 @@
   font: inherit;
   color: inherit;
   cursor: pointer;
-  transition: padding-left var(--dur) var(--ease), background var(--dur) var(--ease);
+  /* Background only. The nudge on hover is a transform on the labels, not a
+     padding change: animating padding relayouts the row (and its siblings)
+     every frame, where a transform is composited. */
+  transition: background var(--dur) var(--ease);
 }
+/* Flex items, so these spans are blockified and transformable. */
 .cf2-ask__q { font-size: 15px; font-weight: 500; }
 .cf2-ask__owner { font-size: 13px; color: var(--ink-60); }
+.cf2-ask__q,
+.cf2-ask__owner { transition: transform var(--dur) var(--ease); }
 .cf2-ask__go { margin-left: auto; color: var(--ink-40); }
-.cf2-ask:hover { padding-left: 10px; background: var(--lavender-2); }
+.cf2-ask:hover { background: var(--lavender-2); }
+.cf2-ask:hover .cf2-ask__q,
+.cf2-ask:hover .cf2-ask__owner { transform: translateX(10px); }
 .cf2-ask:hover .cf2-ask__go { color: var(--ink); }
 .cf2-ask:focus-visible { outline: 2px solid var(--lavender); outline-offset: -2px; }
 
