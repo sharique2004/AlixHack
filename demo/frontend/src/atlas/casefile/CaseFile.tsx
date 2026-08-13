@@ -55,11 +55,13 @@ function Column(props: {
   title: string;
   total: number | null;
   assets: AssetClassification[];
-  tone?: "wait";
+  /** Surface, named by meaning rather than by position, so the columns can be
+      ordered to match the figures above without the tints following along. */
+  tone: "probate" | "outside" | "wait";
 }): JSX.Element | null {
   if (props.assets.length === 0) return null;
   return (
-    <div className={`cf2-col${props.tone ? " cf2-col--wait" : ""}`}>
+    <div className={`cf2-col cf2-col--${props.tone}`}>
       <div className="cf2-col__head">
         <span>{props.title}</span>
         <span className="cf2-col__total">{formatUSD(props.total)}</span>
@@ -81,41 +83,60 @@ export function CaseFile(props: {
   const split = splitEstate(a.asset_map);
   const { answer, detail } = headline(a);
   const critical = a.flags.filter((f) => f.severity === "critical");
-  const dated = a.deadlines.filter((d) => d.status === "computed" && d.date);
+  // Chronological. The engine emits deadlines grouped by rule, which is the
+  // wrong order for a list whose entire job is "what comes next".
+  const dated = a.deadlines
+    .filter((d) => d.status === "computed" && d.date)
+    .sort((x, y) => {
+      const k = (d: typeof x) => (d.date!.year * 10000) + (d.date!.month * 100) + d.date!.day;
+      return k(x) - k(y);
+    });
 
   return (
     <div className="atlas cf2">
-      {/* 1 — the answer */}
+      {/* 1 — the answer. The three numbers are the point of the page, so they
+             get the size: a tiny grey run-on line whispered the one thing a
+             reader is here for. */}
       <section className="cf2-answer">
         <h1>{answer}</h1>
         {detail ? <p className="cf2-answer__detail">{detail}</p> : null}
-        <p className="cf2-answer__nums">
-          {formatUSD(a.probate_estate.known_subtotal_cents)} through probate
-          <span> · </span>
-          {formatUSD(split.nonProbateKnownCents)} passes outside it
-          {a.unresolved_facts.length > 0 ? (
-            <>
-              <span> · </span>
-              {a.unresolved_facts.length} still unknown
-            </>
-          ) : null}
-        </p>
+        {a.asset_map.length > 0 || a.unresolved_facts.length > 0 ? (
+          <dl className="cf2-figs">
+            <div className="cf2-fig">
+              <dt>Through probate</dt>
+              <dd>{formatUSD(a.probate_estate.known_subtotal_cents)}</dd>
+            </div>
+            <div className="cf2-fig">
+              <dt>Passes outside it</dt>
+              <dd>{formatUSD(split.nonProbateKnownCents)}</dd>
+            </div>
+            {a.unresolved_facts.length > 0 ? (
+              <div className="cf2-fig cf2-fig--wait">
+                <dt>Still unknown</dt>
+                <dd>{a.unresolved_facts.length}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
       </section>
 
       {/* 2 — where the money goes. Nothing to show before any asset is entered. */}
       {a.asset_map.length > 0 ? (
       <section className="cf2-block">
         <h2>Where the money goes.</h2>
+        {/* Same order as the figures above — three concepts, one order. */}
         <div className="cf2-cols">
-          <Column
-            title="Passes outside probate"
-            total={split.nonProbateKnownCents}
-            assets={split.nonProbate}
-          />
           <Column
             title="Through probate"
             total={split.probateKnownCents}
             assets={split.probate}
+            tone="probate"
+          />
+          <Column
+            title="Passes outside probate"
+            total={split.nonProbateKnownCents}
+            assets={split.nonProbate}
+            tone="outside"
           />
           <Column
             title="Not yet placed"
@@ -139,29 +160,50 @@ export function CaseFile(props: {
             </div>
           ))}
 
-          {a.unresolved_facts.slice(0, 6).map((path) => {
-            const d = describeFact(path, a.asset_map);
-            return (
-              <button
-                key={path}
-                type="button"
-                className="cf2-item cf2-item--ask"
-                onClick={() => props.onEditFact?.(path)}
-              >
-                {/* Lead with the question. The owner only earns a line when it
-                    names a specific asset — "The decedent" on every row is noise. */}
-                <strong>{d.label}</strong>
-                <span>{d.owner && d.owner !== "The decedent" ? d.owner : ""}</span>
-              </button>
-            );
-          })}
-
-          {dated.map((d) => (
-            <div key={d.id} className="cf2-item">
-              <strong>{formatDate(d.date)}</strong>
-              <span>{d.label}</span>
+          {/* Open questions and dates are different kinds of thing — one is a
+              question you answer, the other is a day that arrives. Rendering
+              them as one undifferentiated list made both harder to read. */}
+          {a.unresolved_facts.length > 0 ? (
+            <div className="cf2-group">
+              <h3 className="cf2-group__label">
+                Questions that would resolve this
+                <span>{a.unresolved_facts.length}</span>
+              </h3>
+              {a.unresolved_facts.slice(0, 6).map((path) => {
+                const d = describeFact(path, a.asset_map);
+                const owner = d.owner && d.owner !== "The decedent" ? d.owner : "";
+                return (
+                  <button
+                    key={path}
+                    type="button"
+                    className="cf2-ask"
+                    onClick={() => props.onEditFact?.(path)}
+                  >
+                    {/* Lead with the question. The owner only earns a line when
+                        it names a specific asset. */}
+                    <span className="cf2-ask__q">{d.label}</span>
+                    {owner ? <span className="cf2-ask__owner">{owner}</span> : null}
+                    <span className="cf2-ask__go" aria-hidden="true">→</span>
+                  </button>
+                );
+              })}
             </div>
-          ))}
+          ) : null}
+
+          {dated.length > 0 ? (
+            <div className="cf2-group">
+              <h3 className="cf2-group__label">
+                Dates that arrive on their own
+                <span>{dated.length}</span>
+              </h3>
+              {dated.map((d) => (
+                <div key={d.id} className="cf2-date">
+                  <time className="cf2-date__when">{formatDate(d.date)}</time>
+                  <span className="cf2-date__what">{d.label}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </section>
       ) : null}
 

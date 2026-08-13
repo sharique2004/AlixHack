@@ -517,86 +517,248 @@
   .cf .cf-col__total { text-align: left; }
 }
 
+
 /* ==========================================================================
-   Simplified case file (.cf2) — one screen, three things.
-   Plain rows, no nested cards, no per-section eyebrow/lede furniture.
+   Case file (.cf2) — one screen, three things.
+
+   Same structure and same information as before; this is a craft pass. The
+   figures carry the page, the two halves of the estate are told apart by
+   surface rather than by reading the labels, and open questions are visually
+   distinct from dates because they are a different kind of thing.
+   Alix's palette does the work: bone and cyan for surfaces, lavender only for
+   action, and no elevation anywhere.
    ========================================================================== */
 
-.cf2 { max-width: 1040px; margin: 0 auto; padding: 0 24px 96px; }
+.cf2 { max-width: 1060px; margin: 0 auto; padding: 0 24px 110px; }
 
-/* 1 — the answer */
-.cf2-answer { padding: 64px 0 40px; border-bottom: 1px solid var(--ink-08); }
+/* ------------------------------------------------------------- 1. answer */
+
+.cf2-answer { padding: 76px 0 44px; }
+
 .cf2-answer h1 {
-  font-family: var(--serif); font-weight: 400; letter-spacing: -0.04em;
-  line-height: 1.04; font-size: clamp(34px, 5vw, 56px); margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.042em;
+  line-height: 1.02;
+  font-size: clamp(38px, 5.6vw, 62px);
+  margin: 0;
+  max-width: 19ch;
+  text-wrap: balance;
 }
-.cf2-answer__detail { margin: 14px 0 0; font-size: 15px; color: var(--ink-60); }
-.cf2-answer__nums { margin: 26px 0 0; font-size: 15px; color: var(--ink-80); }
-.cf2-answer__nums span { color: var(--ink-40); }
 
-/* 2 & 3 — blocks */
-.cf2-block { padding: 44px 0; border-bottom: 1px solid var(--ink-08); }
+.cf2-answer__detail {
+  margin: 18px 0 0;
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--ink-60);
+  letter-spacing: 0;
+}
+
+/* The three figures the reader came for. */
+.cf2-figs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1px;
+  margin: 44px 0 0;
+  background: var(--ink-08);       /* hairlines, via gap */
+  border: 1px solid var(--ink-08);
+  border-radius: var(--r-panel);
+  overflow: hidden;
+}
+.cf2-fig { background: var(--paper); padding: 22px 24px; }
+.cf2-fig dt {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-60);
+  margin: 0 0 10px;
+}
+.cf2-fig dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.cf2-fig--wait { background: var(--wait-bg); }
+.cf2-fig--wait dt, .cf2-fig--wait dd { color: var(--wait-fg); }
+
+/* -------------------------------------------------------------- 2 & 3 */
+
+.cf2-block { padding: 56px 0 0; }
+
 .cf2-block h2 {
-  font-family: var(--serif); font-weight: 400; letter-spacing: -0.03em;
-  font-size: 26px; margin: 0 0 22px;
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.032em;
+  font-size: 30px;
+  margin: 0 0 26px;
 }
 
-.cf2-cols { display: grid; grid-template-columns: 1fr; gap: 30px; }
-.cf2-col__head {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 13px; font-weight: 500; padding-bottom: 9px;
-  border-bottom: 1px solid var(--ink-12);
+/* --------------------------------------------------- where the money goes */
+
+.cf2-cols { display: grid; grid-template-columns: 1fr; gap: 14px; }
+
+.cf2-col {
+  border-radius: var(--r-panel);
+  padding: 22px 24px 8px;
+  background: var(--bone);
 }
-.cf2-col__total { font-variant-numeric: tabular-nums; }
-.cf2-col--wait .cf2-col__head { color: var(--wait-fg); border-bottom-color: var(--wait-fg); }
+/* The split is the insight, so the two halves must not look identical.
+   Tints are keyed to meaning, not position: probate work is the neutral warm
+   surface, what escapes probate is the lighter cyan, unknowns stay amber. */
+.cf2-col--probate { background: var(--bone); }
+.cf2-col--outside { background: var(--cyan); }
+.cf2-col--wait { background: var(--wait-bg); }
+
+.cf2-col__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding-bottom: 14px;
+}
+.cf2-col__head > span:first-child { font-size: 13px; font-weight: 500; }
+.cf2-col__total {
+  font-family: var(--serif);
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.cf2-col--wait .cf2-col__head { color: var(--wait-fg); }
 
 .cf2-list { list-style: none; margin: 0; padding: 0; }
 .cf2-row {
-  display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: baseline;
-  padding: 11px 0; border-bottom: 1px solid var(--ink-08); font-size: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: baseline;
+  padding: 13px 0;
+  border-top: 1px solid rgba(17, 16, 13, 0.09);
+  font-size: 14px;
 }
-.cf2-row:last-child { border-bottom: 0; }
-.cf2-row__val { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.cf2-row__name { text-wrap: pretty; }
+.cf2-row__val { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* 3 — items */
+/* ------------------------------------------------------------ what's left */
+
+.cf2-group { margin-bottom: 34px; }
+.cf2-group:last-child { margin-bottom: 0; }
+
+.cf2 .cf2-group__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-60);
+  margin: 0 0 6px;
+}
+.cf2 .cf2-group__label span {
+  font-variant-numeric: tabular-nums;
+  background: var(--ink-08);
+  color: var(--ink-60);
+  border-radius: var(--r-pill);
+  padding: 1px 8px;
+  font-size: 11px;
+}
+
+/* A question you can answer — clickable, and it says so. */
+.cf2-ask {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 15px 14px 15px 0;
+  border: 0;
+  border-bottom: 1px solid var(--ink-08);
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: padding-left var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.cf2-ask__q { font-size: 15px; font-weight: 500; }
+.cf2-ask__owner { font-size: 13px; color: var(--ink-60); }
+.cf2-ask__go { margin-left: auto; color: var(--ink-40); }
+.cf2-ask:hover { padding-left: 10px; background: var(--lavender-2); }
+.cf2-ask:hover .cf2-ask__go { color: var(--ink); }
+.cf2-ask:focus-visible { outline: 2px solid var(--lavender); outline-offset: -2px; }
+
+/* A date that arrives whether or not anyone acts. */
+.cf2-date {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--ink-08);
+}
+.cf2-date__when {
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 108px;
+}
+.cf2-date__what { font-size: 14px; color: var(--ink-60); }
+
 .cf2-item {
-  display: flex; gap: 14px; align-items: baseline; width: 100%; text-align: left;
-  padding: 13px 0; border: 0; border-bottom: 1px solid var(--ink-08);
-  background: none; font: inherit; color: inherit; font-size: 14px;
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  padding: 16px 18px;
+  border-radius: var(--r-inner);
+  font-size: 14px;
+  margin-bottom: 10px;
 }
-.cf2-item strong { font-weight: 500; min-width: 190px; }
-.cf2-item span { color: var(--ink-60); font-size: 13.5px; }
+.cf2-item--crit { background: var(--crit-bg); }
 .cf2-item--crit strong { color: var(--crit-fg); }
-.cf2-item--ask { cursor: pointer; }
-.cf2-item--ask:hover strong { color: var(--blue); }
-.cf2-item--ask:focus-visible { outline: 2px solid var(--lavender); outline-offset: 3px; }
+.cf2-item span { color: var(--ink-80); }
 
-/* everything else */
-.cf2-more { padding: 30px 0; }
+/* ---------------------------------------------------------- everything else */
+
+.cf2-more { margin-top: 56px; border-top: 1px solid var(--ink-08); padding-top: 22px; }
 .cf2-more summary {
-  cursor: pointer; font-size: 13.5px; color: var(--ink-60); padding: 6px 0;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--ink-60);
+  padding: 6px 0;
+  list-style: none;
 }
+.cf2-more summary::-webkit-details-marker { display: none; }
+.cf2-more summary::before { content: "＋  "; color: var(--ink-40); }
+.cf2-more[open] summary::before { content: "−  "; }
 .cf2-more summary:hover { color: var(--ink); }
-.cf2-more__body { padding-top: 22px; display: flex; flex-direction: column; gap: 26px; }
-.cf2-more__group h3 {
-  font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--ink-40); margin: 0 0 10px;
+.cf2-more__body { padding-top: 26px; display: flex; flex-direction: column; gap: 30px; }
+.cf2 .cf2-more__group h3 {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+  margin: 0 0 10px;
 }
-.cf2-more__group h3 span { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.cf2 .cf2-more__group h3 span { font-weight: 400; text-transform: none; letter-spacing: 0; }
 .cf2-more__row {
-  display: flex; gap: 11px; align-items: baseline;
-  padding: 7px 0; font-size: 13.5px; border-bottom: 1px solid var(--ink-08);
+  display: flex;
+  gap: 11px;
+  align-items: baseline;
+  padding: 8px 0;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--ink-08);
 }
 .cf2-more__label { flex: 1; }
 .cf2-more__cite { color: var(--ink-40); font-size: 11px; }
-.cf2-more__note { font-size: 13px; color: var(--ink-60); margin: 0 0 8px; }
+.cf2-more__note { font-size: 13px; color: var(--ink-60); margin: 0 0 8px; max-width: 70ch; }
 .cf2-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-12); flex: none; }
 .cf2-dot--qualifies { background: var(--ok-fg); }
 .cf2-dot--needs_information { background: var(--wait-fg); }
 
-.cf2-footer { padding-top: 30px; font-size: 12px; color: var(--ink-40); }
-.cf2-footer p { margin: 0 0 6px; max-width: 62ch; }
+.cf2-footer { margin-top: 46px; font-size: 12px; color: var(--ink-40); }
+.cf2-footer p { margin: 0 0 6px; max-width: 64ch; }
 
-@media (min-width: 760px) {
-  .cf2-cols { grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 36px; }
+@media (min-width: 820px) {
+  .cf2-cols { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 }
